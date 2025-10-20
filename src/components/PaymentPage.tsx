@@ -5,6 +5,7 @@ import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase'; // adjust path if needed
 import { ArrowLeft, Crown, CheckCircle, Upload, Copy, Building, Sparkles, CreditCard } from 'lucide-react';
 import logo from 'figma:asset/2cc5c58a6356b9bc99595ba4c64a3c807447e92a.png';
 
@@ -18,7 +19,7 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ onBack }) => {
   const [amount, setAmount] = useState('2999');
   const [proofImage, setProofImage] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  
   const bankDetails = {
     bankName: 'HBL Bank',
     accountTitle: 'Resumize Pakistan',
@@ -38,26 +39,101 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ onBack }) => {
     }
   };
 
-  const submitPaymentProof = async () => {
-    if (!txReference.trim()) {
-      alert('Please enter the transaction reference number');
-      return;
-    }
-
-    if (!proofImage) {
-      alert('Please upload payment proof image');
-      return;
-    }
-
+ const submitPaymentProof = async () => {
+  try {
     setIsSubmitting(true);
-    
-    // Mock payment submission - replace with actual Supabase call
-    setTimeout(() => {
-      alert('Payment proof submitted successfully! Your account will be upgraded within 24 hours after verification.');
+
+    // 1️⃣ Validate transaction reference
+    if (!txReference.trim()) {
+      alert("Please enter the transaction reference number");
       setIsSubmitting(false);
-      onBack();
-    }, 2000);
-  };
+      return;
+    }
+
+    // 2️⃣ Validate image
+    if (!proofImage) {
+      alert("Please upload payment proof image");
+      setIsSubmitting(false);
+      return;
+    }
+
+    // 3️⃣ Get logged-in user
+    const { data: { user } } = await supabase.auth.getUser();
+if (!user) return alert("Please sign in first");
+
+let username = "Unknown";
+if (user.id) {
+  const { data: profile } = await supabase
+    .from("profile")
+    .select("username")
+    .eq("id", user.id)
+    .single();
+  username = profile?.username || "Unknown";
+}
+
+const email = user.email || "Unknown";
+
+    // 4️⃣ Ensure file is a proper File object
+    if (!(proofImage instanceof File)) {
+      alert("Uploaded file is not valid.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    // 5️⃣ Upload to bucket
+    const fileName = `${Date.now()}-${proofImage.name}`;
+
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("payment-proofs")
+      .upload(fileName, proofImage, {
+        cacheControl: "3600",
+        upsert: false
+      });
+
+    if (uploadError) {
+     console.error("Storage upload error:", uploadError); // log the whole object
+  alert(`Failed to upload proof image: ${uploadError.message}`);
+      setIsSubmitting(false);
+      return;
+    }
+
+    // 6️⃣ Get public URL
+    const { data: urlData } = supabase.storage
+      .from("payment-proofs")
+      .getPublicUrl(fileName);
+
+    const proofUrl = urlData.publicUrl;
+
+    // 7️⃣ Insert into table (RLS-compatible)
+    const { error: insertError } = await supabase.from("payment_proofs").insert({
+  user_id: user.id,
+  tx_reference: txReference,
+  proof_url: proofUrl,
+  status: "pending",
+  email,
+  username,
+});
+
+    if (insertError) {
+      console.error("Database insert error:", insertError.message);
+      alert("Failed to submit payment proof. Check RLS policy.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    // 8️⃣ Success
+    alert("Payment proof submitted successfully!");
+    setTxReference("");
+    setProofImage(null);
+    onBack();
+
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    alert("An unexpected error occurred.");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   if (!user) return null;
 

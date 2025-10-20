@@ -37,11 +37,14 @@
             "embla-carousel-react": "^8.6.0",
             "framer-motion": "^12.23.22",
             "html2canvas": "^1.4.1",
+            "html2pdf.js": "^0.12.1",
             "input-otp": "^1.4.2",
             "jspdf": "^3.0.3",
             "lucide-react": "^0.487.0",
+            "mammoth": "^1.11.0",
             "next-themes": "^0.4.6",
             "openai": "^6.3.0",
+            "pdfjs-dist": "^5.4.296",
             "react": "^18.3.1",
             "react-day-picker": "^8.10.1",
             "react-dom": "^18.3.1",
@@ -52,15 +55,16 @@
             "recharts": "^2.15.2",
             "sonner": "^2.0.3",
             "tailwind-merge": "*",
+            "tesseract.js": "^6.0.1",
             "vaul": "^1.1.2"
       },
       "devDependencies": {
             "@types/node": "^20.10.0",
-            "@types/react": "^19.2.0",
-            "@types/react-dom": "^19.2.0",
+            "@types/react": "^19.2.2",
+            "@types/react-dom": "^19.2.2",
             "@types/react-router-dom": "^5.3.3",
             "@vitejs/plugin-react-swc": "^3.10.2",
-            "vite": "6.3.5"
+            "vite": "^6.3.5"
       },
       "scripts": {
             "dev": "vite",

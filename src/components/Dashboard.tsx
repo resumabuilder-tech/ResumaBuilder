@@ -126,10 +126,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               <p className="text-sm text-muted-foreground mb-4">
                 Generate tailored cover letters that align with your resume and target job positions.
               </p>
-              <Button className="w-full" variant="outline">
-                Create Letter
-                {plan === 'free' && <Badge variant="secondary" className="ml-2">Premium</Badge>}
-              </Button>
+              
+                <Button className="w-full">Create Letter</Button>
+              
             </CardContent>
           </Card>
 
@@ -189,7 +188,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         )}
 
         {/* Recent Activity */}
-        <Card>
+       {/* <Card>
           <CardHeader>
             <CardTitle>Recent Activity</CardTitle>
             <CardDescription>Your latest resumes and documents</CardDescription>
@@ -215,10 +214,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Admin Panel Access */}
-        {isAdmin && (
+        {/* {isAdmin && (
           <div className="mt-8">
             <Card className="bg-muted/50">
               <CardContent className="p-6">
@@ -240,8 +239,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 </div>
               </CardContent>
             </Card>
-          </div>
-        )}
+          </div>*/}
+      
       </main>
     </div>
   );

@@ -8,6 +8,12 @@ import { Progress } from './ui/progress';
 import { useAuth } from '../contexts/AuthContext';
 import { ArrowLeft, CheckCircle, Upload, Target, TrendingUp, AlertCircle } from 'lucide-react';
 import { ATSResult } from '../types';
+import Tesseract from 'tesseract.js';
+import * as pdfjsLib from 'pdfjs-dist';
+import workerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
+
 
 interface ATSCheckerProps {
   onBack: () => void;
@@ -20,41 +26,84 @@ export const ATSChecker: React.FC<ATSCheckerProps> = ({ onBack }) => {
   const [jobDescription, setJobDescription] = useState('');
   const [atsResult, setATSResult] = useState<ATSResult | null>(null);
 
+  // ✅ FIX: Proper PDF text extraction handler
+ const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  try {
+    if (file.type === 'application/pdf') {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+      let text = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+
+        const extracted = content.items.map((item: any) => item.str).join(' ');
+        text += extracted;
+
+        // Fallback OCR if text layer empty
+        if (!extracted.trim()) {
+          const viewport = page.getViewport({ scale: 1 });
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d')!;
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+
+          await page.render({ canvasContext: context, viewport,canvas }).promise;
+
+          const ocrResult = await Tesseract.recognize(canvas, 'eng');
+          text += ' ' + ocrResult.data.text;
+        }
+      }
+
+      if (!text.trim()) {
+        alert('Could not extract text from PDF. Try uploading a different file.');
+        return;
+      }
+
+      setResumeText(text);
+    } else {
+      const text = await file.text();
+      setResumeText(text);
+    }
+  } catch (err) {
+    console.error('❌ File processing error:', err);
+    alert('Error processing PDF. Please try again.');
+  }
+};
   const analyzeResume = async () => {
-    if (!resumeText.trim() || !jobDescription.trim()) {
-      alert('Please provide both resume content and job description');
+    if (!resumeText || !jobDescription) {
+      alert('Please provide both resume content and job description.');
       return;
     }
 
     setIsAnalyzing(true);
-    
-    // Mock ATS analysis - replace with actual OpenAI API call
-    setTimeout(() => {
-      const mockResult: ATSResult = {
-        score: Math.floor(Math.random() * 40) + 60, // Random score between 60-100
-        missing_keywords: [
-          'React',
-          'Node.js',
-          'AWS',
-          'Agile methodology',
-          'Unit testing',
-          'REST API'
-        ],
-        suggested_improvements: [
-          'Add specific metrics to quantify your achievements (e.g., "Improved performance by 40%")',
-          'Include more technical keywords mentioned in the job description',
-          'Add a professional summary section at the top of your resume',
-          'Use bullet points to improve readability and ATS parsing',
-          'Include relevant certifications or training programs',
-          'Mention specific tools and technologies used in projects',
-          'Add keywords related to the industry and role requirements',
-          'Include soft skills that are mentioned in the job posting'
-        ]
-      };
-      
-      setATSResult(mockResult);
+    try {
+      console.log('📤 Sending ATS analysis request...');
+      const res = await fetch('http://localhost:5000/api/analyze/ats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resumeText, jobDescription }),
+      });
+
+      const data = await res.json();
+      console.log('📥 ATS Response:', data);
+
+      if (data.error) {
+        alert('Error analyzing resume. Please try again.');
+        return;
+      }
+
+      setATSResult(data);
+    } catch (err) {
+      console.error('❌ [CLIENT] ATS Analysis Error:', err);
+      alert('An error occurred while analyzing the resume.');
+    } finally {
       setIsAnalyzing(false);
-    }, 3000);
+    }
   };
 
   const getScoreColor = (score: number) => {
@@ -83,7 +132,7 @@ export const ATSChecker: React.FC<ATSCheckerProps> = ({ onBack }) => {
             </Button>
             <h1 className="text-xl font-bold text-gray-900">ATS Resume Checker</h1>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Badge variant={user.plan === 'paid' ? 'default' : 'secondary'}>
               {user.plan === 'paid' ? 'Premium' : 'Free Plan'}
@@ -114,14 +163,25 @@ export const ATSChecker: React.FC<ATSCheckerProps> = ({ onBack }) => {
                     rows={10}
                   />
                 </div>
-                
+
                 <div className="text-center">
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
                     <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                    <p className="text-sm text-gray-600 mb-2">Or upload your resume file</p>
-                    <Button variant="outline" size="sm" disabled>
+                    <p className="text-sm text-gray-600 mb-2">Upload your resume file</p>
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      id="file-upload"
+                      className="hidden"
+                      onChange={handleFileUpload}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById('file-upload')?.click()}
+                    >
                       <Upload className="h-4 w-4 mr-2" />
-                      Upload PDF/DOC (Coming Soon)
+                      Upload PDF/DOC
                     </Button>
                   </div>
                 </div>
@@ -149,8 +209,8 @@ export const ATSChecker: React.FC<ATSCheckerProps> = ({ onBack }) => {
               </CardContent>
             </Card>
 
-            <Button 
-              className="w-full" 
+            <Button
+              className="w-full"
               onClick={analyzeResume}
               disabled={isAnalyzing || !resumeText.trim() || !jobDescription.trim()}
             >
@@ -190,9 +250,11 @@ export const ATSChecker: React.FC<ATSCheckerProps> = ({ onBack }) => {
                       </div>
                       <Progress value={atsResult.score} className="mb-4" />
                       <p className="text-sm text-gray-600">
-                        {atsResult.score >= 80 ? 'Excellent! Your resume is well-optimized for ATS systems.' :
-                         atsResult.score >= 60 ? 'Good score, but there\'s room for improvement.' :
-                         'Your resume needs optimization to pass ATS screening.'}
+                        {atsResult.score >= 80
+                          ? 'Excellent! Your resume is well-optimized for ATS systems.'
+                          : atsResult.score >= 60
+                          ? 'Good score, but there\'s room for improvement.'
+                          : 'Your resume needs optimization to pass ATS screening.'}
                       </p>
                     </div>
                   </CardContent>
@@ -256,9 +318,7 @@ export const ATSChecker: React.FC<ATSCheckerProps> = ({ onBack }) => {
                   <Button className="flex-1" onClick={() => setATSResult(null)}>
                     Check Another Resume
                   </Button>
-                  <Button variant="outline" className="flex-1">
-                    Export Report
-                  </Button>
+
                 </div>
               </>
             ) : (

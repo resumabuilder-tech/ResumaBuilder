@@ -15,10 +15,20 @@ import logo from 'figma:asset/2cc5c58a6356b9bc99595ba4c64a3c807447e92a.png';
 import { fetchTemplates } from '../lib/resumeService';
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-
+import html2pdf from "html2pdf.js";
 
 interface ResumeBuilderProps {
   onBack: () => void;
+}
+// Add this above your component if TS types mismatch
+declare module "html2pdf.js" {
+  interface Html2PdfOptions {
+    margin?: number | [number, number, number, number];
+    filename?: string;
+    image?: { type?: "jpeg" | "png" | "webp"; quality?: number };
+    html2canvas?: any;
+    jsPDF?: any;
+  }
 }
 
 export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ onBack }) => {
@@ -33,6 +43,7 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ onBack }) => {
   const [availableTemplates, setAvailableTemplates] = useState<ResumeTemplate[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(true);
   const [aiResume, setAiResume] = useState<string | null>(null);
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
 
   useEffect(() => {
     const loadTemplates = async () => {
@@ -106,89 +117,116 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ onBack }) => {
   };
 
  // inside ResumeBuilder.tsx
-// inside your ResumeBuilder component - replace existing generateAIContent
 async function generateAIContent() {
-  console.log('📥 [CLIENT] generateAIContent() called');
+  console.log("📥 [CLIENT] generateAIContent() called");
   setIsGenerating(true);
 
-  // build payload with safe defaults (avoid undefined in JSON)
   const payload = {
     profile: {
-      name: resumeData.personal_info?.name || '',
-      email: resumeData.personal_info?.email || '',
-      phone: resumeData.personal_info?.phone || '',
-      location: resumeData.personal_info?.location || '',
-      linkedin: resumeData.personal_info?.linkedin || '',
-      github: resumeData.personal_info?.github || '',
-      portfolio: resumeData.personal_info?.portfolio || '',
-      summary: resumeData.summary || '',
+      name: resumeData.personal_info?.name || "",
+      email: resumeData.personal_info?.email || "",
+      phone: resumeData.personal_info?.phone || "",
+      location: resumeData.personal_info?.location || "",
+      linkedin: resumeData.personal_info?.linkedin || "",
+      github: resumeData.personal_info?.github || "",
+      portfolio: resumeData.personal_info?.portfolio || "",
+      summary: resumeData.summary || "",
       skills: resumeData.skills || [],
       experience: resumeData.experience || [],
       education: resumeData.education || [],
       projects: resumeData.projects || [],
-      certifications: resumeData.certifications || []
+      certifications: resumeData.certifications || [],
     },
-    job_title: resumeData.title || '',
+    job_title: resumeData.title || "",
     target_skills: (resumeData.skills || []).slice(0, 6),
-    template_url: selectedTemplate?.url || '' // important: send template URL
+    template_url: selectedTemplate?.url || "",
   };
 
   try {
-    console.log('📤 [CLIENT] Sending payload to /api/generate/resume', payload);
+    console.log("📤 [CLIENT] Sending payload to /api/generate/resume", payload);
 
-    const resp = await fetch('http://localhost:5000/api/generate/resume', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+    const response = await fetch("http://localhost:5000/api/generate/resume", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
 
-    console.log('📡 [CLIENT] Raw response status:', resp.status, resp.statusText);
+    console.log("📡 [CLIENT] Raw response status:", response.status, response.statusText);
 
-    const json = await resp.json();
-    console.log('📥 [CLIENT] Backend response:', json);
+    // ✅ Read JSON only once!
+    const data = await response.json();
+    console.log("📥 [CLIENT] Backend response:", data);
 
-    if (!json || !json.success) {
-      console.error('⚠️ [CLIENT] AI generation failed:', json?.error);
-      alert('AI generation failed — check server logs');
+    if (!data || !data.success) {
+      alert("AI generation failed — check server logs");
       return;
     }
 
-    // Backend returns final_html (injected), plus parsed json + text
-    const { final_html, json: parsedJson, text } = json;
+    const resumeDataFromAI = data.resume;
 
-    // show logs
-    console.log('🧾 [CLIENT] Parsed model JSON (if any):', parsedJson);
-    console.log('📄 [CLIENT] Model text preview (short):', (text || '').slice(0, 400));
+    // ✅ Update your state safely
+    setResumeData((prev) => ({
+      ...prev,
+      summary: resumeDataFromAI.summary || "",
+      skills: resumeDataFromAI.skills || [],
+      experience: resumeDataFromAI.experience || [],
+      education: resumeDataFromAI.education || [],
+      projects: resumeDataFromAI.projects || [],
+      certifications: resumeDataFromAI.certifications || [],
+    }));
 
-    // set preview — final_html is ready-to-render HTML
-    if (final_html && final_html.length > 10) {
-      setAiResume(final_html);
-      setPreviewHTML(final_html);
-      setPreviewMode(true);
-      // optionally scroll to preview or set UI state
-      console.log('✅ [CLIENT] Preview HTML set');
-    } else {
-      // fallback: if no final_html, render `text` as preformatted HTML
-      const fallback = `<div class="p-4 bg-white"><pre style="white-space:pre-wrap">${text || 'No content'}</pre></div>`;
-      setPreviewHTML(fallback);
-      setPreviewMode(true);
-      console.warn('⚠️ [CLIENT] final_html empty, used text fallback');
-    }
+    // ✅ Build the preview
+    await buildPreviewFromAI(resumeDataFromAI);
 
+    console.log("✅ [CLIENT] Resume successfully generated and preview built.");
   } catch (err) {
-    console.error('❌ [CLIENT] Exception generateAIContent:', err);
-    alert('Error generating resume — see console and server logs.');
+    console.error("❌ [CLIENT] Exception generateAIContent:", err);
+    alert("Error generating resume — see console and server logs.");
   } finally {
     setIsGenerating(false);
-    console.log('🟢 [CLIENT] generateAIContent finished');
+    console.log("🟢 [CLIENT] generateAIContent finished");
   }
 }
 
-// Inject AI text or manual data into template HTML and set previewHTML
-async function buildPreviewFromAI(aiText: string) {
+
+// ✅ Helper to update local resume state
+const handleAIResponse = (aiResume: AIResume) => {
+  setResumeData((prev) => ({
+    ...prev,
+    summary: aiResume.summary || "",
+    skills: aiResume.skills || [],
+    experience: aiResume.experience || [],
+    education: aiResume.education || [],
+    projects: aiResume.projects || [],
+    certifications: aiResume.certifications || [],
+  }));
+};
+
+// ✅ AI Resume Interface
+interface AIResume {
+  summary: string;
+  skills: string[];
+  experience: {
+    title: string;
+    company: string;
+    duration: string;
+    description: string;
+  }[];
+  education: {
+    degree: string;
+    institution: string;
+    year: string;
+    gpa: string;
+  }[];
+  projects: any[];
+  certifications: any[];
+}
+
+async function buildPreviewFromAI(aiResume: AIResume) {
   if (!selectedTemplate?.url) {
-    // fallback: just show the ai text inside a simple wrapper
-    setPreviewHTML(`<div class="p-6 bg-white"><pre style="white-space:pre-wrap">${escapeHtml(aiText)}</pre></div>`);
+    setPreviewHTML(
+      `<div class="p-6 bg-white"><pre>${escapeHtml(JSON.stringify(aiResume, null, 2))}</pre></div>`
+    );
     setPreviewMode(true);
     return;
   }
@@ -197,38 +235,58 @@ async function buildPreviewFromAI(aiText: string) {
     const resp = await fetch(selectedTemplate.url);
     let html = await resp.text();
 
-    // Put the AI text into a placeholder {{ai_resume}} (preferred)
-    if (html.includes("{{ai_resume}}")) {
-      html = html.replace(/{{ai_resume}}/g, aiText);
-    } else {
-      // fallback: try to find main content area, otherwise append
-      // keep it simple: replace {{summary}} etc. if present
+    if (typeof aiResume === "object") {
       html = html
-        .replace(/{{name}}/g, resumeData.personal_info?.name || "")
-        .replace(/{{email}}/g, resumeData.personal_info?.email || "")
-        .replace(/{{phone}}/g, resumeData.personal_info?.phone || "")
-        .replace(/{{location}}/g, resumeData.personal_info?.location || "")
-        .replace(/{{linkedin}}/g, resumeData.personal_info?.linkedin || "")
-        .replace(/{{portfolio}}/g, resumeData.personal_info?.portfolio || "")
-        .replace(/{{summary}}/g, aiText) // inject AI summary into summary placeholder
-        .replace(/{{skills}}/g, (resumeData.skills || []).join(", "))
-        .replace(/{{experience}}/g, (resumeData.experience || []).map(e => `${e.title} — ${e.company} (${e.duration})<br>`).join(""))
-        .replace(/{{education}}/g, (resumeData.education || []).map(ed => `${ed.degree} — ${ed.institution} (${ed.year})<br>`).join(""));
+        .replace(/{{summary}}/g, aiResume.summary || "")
+        .replace(/{{skills}}/g, (aiResume.skills || []).join(", "))
+        .replace(
+          /{{experience}}/g,
+          (aiResume.experience || [])
+            .map(
+              (e) =>
+                `<b>${e.title}</b> — ${e.company} (${e.duration})<br>${e.description || ""}`
+            )
+            .join("<br><br>")
+        )
+        .replace(
+          /{{education}}/g,
+          (aiResume.education || [])
+            .map(
+              (ed) =>
+                `${ed.degree} — ${ed.institution} (${ed.year || ""}) ${
+                  ed.gpa ? "| GPA: " + ed.gpa : ""
+                }`
+            )
+            .join("<br>")
+        )
+        .replace(
+          /{{projects}}/g,
+          (aiResume.projects || [])
+            .map((p) => (p.title ? `${p.title}: ${p.description}` : p))
+            .join("<br>")
+        )
+        .replace(
+          /{{certifications}}/g,
+          (aiResume.certifications || [])
+            .map((c) => (c.name ? `${c.name} (${c.year})` : c))
+            .join("<br>")
+        );
+    } else if (typeof aiResume === "string") {
+      html = html.replace(/{{summary}}/g, aiResume);
     }
 
-    // Clean up leftover placeholders — remove lines with unmatched placeholders
     html = cleanTemplate(html);
-
     setPreviewHTML(html);
     setPreviewMode(true);
   } catch (err) {
     console.error("Error building preview from AI:", err);
-    setPreviewHTML(`<div class="p-4">Failed to load template preview. Showing AI text below:<pre style="white-space:pre-wrap">${escapeHtml(aiText)}</pre></div>`);
+    setPreviewHTML(
+      `<div class="p-4"><pre>${escapeHtml(JSON.stringify(aiResume, null, 2))}</pre></div>`
+    );
     setPreviewMode(true);
   }
 }
 
-// small helper to escape text when embedding raw text
 function escapeHtml(unsafe: string) {
   return unsafe
     .replace(/&/g, "&amp;")
@@ -240,9 +298,9 @@ function escapeHtml(unsafe: string) {
 
   
 
-  const handleDownloadPDF = async () => {
+const handleDownloadPDF = async () => {
   try {
-    await handlePreview(); // 🔄 Refresh template with latest form data
+    await handlePreview(); // Refresh resume preview first
 
     const iframe = document.querySelector("iframe");
     if (!iframe) {
@@ -258,22 +316,22 @@ function escapeHtml(unsafe: string) {
       return;
     }
 
-    const canvas = await html2canvas(content, { scale: 2 });
-    const imgData = canvas.toDataURL("image/png");
+    // Options for html2pdf (typed as any to avoid TS namespace issues)
+    const opt: any = {
+      margin: 0.5,
+      filename: `${resumeData.personal_info?.name || "resume"}.pdf`,
+      image: { type: "jpeg", quality: 0.98 }, // literal "jpeg"
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
+    };
 
-    const pdf = new jsPDF("p", "mm", "a4");
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = (canvas.height * pageWidth) / canvas.width;
-
-    pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
-    pdf.save(`${resumeData.personal_info?.name || "resume"}.pdf`);
+    // ✅ Generate and download PDF with selectable text
+    html2pdf().set(opt).from(content).save();
   } catch (error) {
-    console.error("Error generating PDF:", error);
-    alert("Failed to generate PDF. Please try again.");
+    console.error("❌ Error generating text-based PDF:", error);
+    alert("Failed to generate text-based PDF. Please try again.");
   }
 };
-
-
 // 🧠 Clean function to remove placeholders and empty tags
 
 const cleanTemplate = (html: string) => {
@@ -652,7 +710,7 @@ const handlePreview = async () => {
               </Button>
               <iframe
                 srcDoc={previewHTML || "<p>Loading preview...</p>"}
-                className="w-full h-[90vh] border rounded-lg shadow-inner bg-white"
+                className="w-full min-h-screen border-none rounded-lg shadow-lg bg-white"
                 title="Resume Preview"
               />
             </div>
@@ -1088,139 +1146,143 @@ const handlePreview = async () => {
               </Card>
             </div>
 
-            {/* Right Column - Live Preview */}
-            <div className="lg:sticky lg:top-20 h-fit">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Live Preview</CardTitle>
-                  <CardDescription>
-                    {user?.plan === 'free' ? 'Preview with watermark (upgrade to remove)' : 'Your resume preview'}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[600px] w-full border rounded-lg p-6 bg-white relative">
-                    {/* Watermark for Free Users */}
-                    {user?.plan === 'free' && (
-                      <>
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 opacity-10">
-                          <div className="transform -rotate-45">
-                            <p className="text-6xl text-gray-900">RESUMIZE</p>
-                            <p className="text-2xl text-gray-900 text-center">FREE VERSION</p>
-                          </div>
-                        </div>
-                        <div className="absolute top-4 right-4 z-20">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button size="sm" variant="default">
-                                <Crown className="h-3 w-3 mr-2" />
-                                Remove Watermark
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Upgrade to Premium</DialogTitle>
-                                <DialogDescription>
-                                  Get watermark-free resumes and access to all premium features
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="space-y-4 py-4">
-                                <div className="space-y-2">
-                                  <h4>Premium Benefits:</h4>
-                                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                                    <li>No watermarks on resumes</li>
-                                    <li>Access to all premium templates</li>
-                                    <li>Unlimited resumes and cover letters</li>
-                                    <li>AI-powered resume generation</li>
-                                    <li>ATS score checker</li>
-                                    <li>Priority support</li>
-                                  </ul>
-                                </div>
-                                <div className="bg-primary/10 p-4 rounded-lg text-center">
-                                  <p className="text-primary mb-2">Only PKR 2,999</p>
-                                  <p className="text-muted-foreground">One-time payment</p>
-                                </div>
-                                <Button className="w-full" onClick={onBack}>
-                                  Upgrade Now
-                                </Button>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                      </>
-                    )}
+           {/* Right Column - Live Preview */}
+<div className="w-full lg:w-2/3 flex flex-col">
+  <Card className="flex flex-col flex-1">
+    <CardHeader>
+      <CardTitle>Live Preview</CardTitle>
+      <CardDescription>
+        {user?.plan === 'free'
+          ? 'Preview with watermark (upgrade to remove)'
+          : 'Your resume preview'}
+      </CardDescription>
+    </CardHeader>
 
-                    {/* Resume Preview Content */}
-                    
-                    <div className="relative">
-                      {/* Header */}
-                      <div className="text-center mb-6 border-b pb-4">
-                        <h2 className="text-primary mb-2">
-                          {resumeData.personal_info?.name || 'Your Name'}
-                        </h2>
-                        <div className="text-muted-foreground space-y-1">
-                          {resumeData.personal_info?.email && <p>{resumeData.personal_info.email}</p>}
-                          {resumeData.personal_info?.phone && <p>{resumeData.personal_info.phone}</p>}
-                          {resumeData.personal_info?.location && <p>{resumeData.personal_info.location}</p>}
-                        </div>
-                      </div>
-
-                      {/* Experience Section */}
-                      {resumeData.experience && resumeData.experience.length > 0 && resumeData.experience[0].title && (
-                        <div className="mb-6">
-                          <h3 className="text-primary mb-3 border-b pb-2">Professional Experience</h3>
-                          <div className="space-y-4">
-                            {resumeData.experience.map((exp, index) => (
-                              exp.title && (
-                                <div key={index}>
-                                  <div className="flex justify-between items-start mb-1">
-                                    <h4>{exp.title}</h4>
-                                    <span className="text-muted-foreground">{exp.duration}</span>
-                                  </div>
-                                  <p className="text-muted-foreground mb-2">{exp.company}</p>
-                                  <p className="text-muted-foreground">{exp.description}</p>
-                                </div>
-                              )
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Education Section */}
-                      {resumeData.education && resumeData.education.length > 0 && resumeData.education[0].degree && (
-                        <div className="mb-6">
-                          <h3 className="text-primary mb-3 border-b pb-2">Education</h3>
-                          <div className="space-y-3">
-                            {resumeData.education.map((edu, index) => (
-                              edu.degree && (
-                                <div key={index}>
-                                  <h4>{edu.degree}</h4>
-                                  <p className="text-muted-foreground">{edu.institution} • {edu.year}</p>
-                                  {edu.gpa && <p className="text-muted-foreground">GPA: {edu.gpa}</p>}
-                                </div>
-                              )
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Skills Section */}
-                      {resumeData.skills && resumeData.skills.length > 0 && (
-                        <div className="mb-6">
-                          <h3 className="text-primary mb-3 border-b pb-2">Skills</h3>
-                          <div className="flex flex-wrap gap-2">
-                            {resumeData.skills.map((skill, index) => (
-                              <Badge key={index} variant="secondary">{skill}</Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </ScrollArea>
+    <CardContent className="flex-1 overflow-hidden">
+      {/* Scrollable Resume Preview */}
+      <div className="relative p-6 bg-white rounded-xl shadow-md min-h-[85vh] max-w-[95%] mx-auto scale-[1.05] transform origin-top transition-transform">
 
 
-                </CardContent>
-              </Card>
+        {/* Watermark for Free Users */}
+        {user?.plan === 'free' && (
+          <>
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 opacity-10">
+              <div className="transform -rotate-45 text-center">
+                <p className="text-6xl text-gray-900">RESUMIZE</p>
+                <p className="text-2xl text-gray-900">FREE VERSION</p>
+              </div>
             </div>
+            <div className="absolute top-4 right-4 z-20">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="default">
+                    <Crown className="h-3 w-3 mr-2" />
+                    Remove Watermark
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Upgrade to Premium</DialogTitle>
+                    <DialogDescription>
+                      Get watermark-free resumes and access to all premium features
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <h4>Premium Benefits:</h4>
+                      <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                        <li>No watermarks on resumes</li>
+                        <li>Access to all premium templates</li>
+                        <li>Unlimited resumes and cover letters</li>
+                        <li>AI-powered resume generation</li>
+                        <li>ATS score checker</li>
+                        <li>Priority support</li>
+                      </ul>
+                    </div>
+                    <div className="bg-primary/10 p-4 rounded-lg text-center">
+                      <p className="text-primary mb-2">Only PKR 2,999</p>
+                      <p className="text-muted-foreground">One-time payment</p>
+                    </div>
+                    <Button className="w-full" onClick={onBack}>
+                      Upgrade Now
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </>
+        )}
+
+        {/* Resume Content */}
+        <div className="relative z-20">
+          {/* Header */}
+          <div className="text-center mb-6 border-b pb-4">
+            <h2 className="text-primary mb-2">
+              {resumeData.personal_info?.name || 'Your Name'}
+            </h2>
+            <div className="text-muted-foreground space-y-1">
+              {resumeData.personal_info?.email && <p>{resumeData.personal_info.email}</p>}
+              {resumeData.personal_info?.phone && <p>{resumeData.personal_info.phone}</p>}
+              {resumeData.personal_info?.location && <p>{resumeData.personal_info.location}</p>}
+            </div>
+          </div>
+
+          {/* Experience */}
+          {(resumeData.experience?.length ?? 0) > 0 && resumeData.experience?.[0]?.title && (
+            <div className="mb-6">
+              <h3 className="text-primary mb-3 border-b pb-2">Professional Experience</h3>
+              <div className="space-y-4">
+                {resumeData.experience.map((exp, i) => (
+                  exp.title && (
+                    <div key={i}>
+                      <div className="flex justify-between items-start mb-1">
+                        <h4>{exp.title}</h4>
+                        <span className="text-muted-foreground">{exp.duration}</span>
+                      </div>
+                      <p className="text-muted-foreground mb-2">{exp.company}</p>
+                      <p className="text-muted-foreground">{exp.description}</p>
+                    </div>
+                  )
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Education */}
+          {resumeData.education && resumeData.education.length > 0 && resumeData.education[0]?.degree && (
+            <div className="mb-6">
+              <h3 className="text-primary mb-3 border-b pb-2">Education</h3>
+              <div className="space-y-3">
+                {(resumeData.education || []).map((edu, i) => (
+                  edu.degree && (
+                    <div key={i}>
+                      <h4>{edu.degree}</h4>
+                      <p className="text-muted-foreground">{edu.institution} • {edu.year}</p>
+                      {edu.gpa && <p className="text-muted-foreground">GPA: {edu.gpa}</p>}
+                    </div>
+                  )
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Skills */}
+          {(resumeData.skills?.length ?? 0) > 0 && (
+            <div className="mb-6">
+              <h3 className="text-primary mb-3 border-b pb-2">Skills</h3>
+              <div className="flex flex-wrap gap-2">
+                {(resumeData.skills || []).map((skill, i) => (
+                  <Badge key={i} variant="secondary">{skill}</Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+</div>
+
           </div>
           )
         }

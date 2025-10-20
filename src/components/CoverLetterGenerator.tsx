@@ -17,7 +17,7 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({ onBa
   const { user } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
   const [jobTitle, setJobTitle] = useState('');
-  const [jobLink, setJobLink] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [jobDescription, setJobDescription] = useState('');
   const [generatedLetter, setGeneratedLetter] = useState('');
 
@@ -25,7 +25,7 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({ onBa
  const generateCoverLetter = async () => {
   console.log("🚀 [CLIENT] generateCoverLetter() called");
 
-  if (user?.plan === "free") {
+   if (!user || user.plan?.toLowerCase() === "free") {
     alert("Cover Letter generation is a premium feature. Please upgrade to access this tool.");
     return;
   }
@@ -38,7 +38,7 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({ onBa
       email: user?.email || "your.email@example.com",
     };
 
-    const company = jobLink || "Unknown Company";
+    const company = companyName || "Unknown Company";
     const points = jobDescription || "";
 
     console.log("📦 [CLIENT] Sending Request Body:", { profile, company, job_title: jobTitle, points });
@@ -46,7 +46,13 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({ onBa
     const res = await fetch("http://localhost:5000/api/generate/cover-letter", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ profile, company, job_title: jobTitle, points }),
+      body: JSON.stringify({
+  profile,
+  company,
+  jobTitle,        // ✅ matches backend variable name
+  jobDescription: points, // ✅ matches backend variable name
+}),
+
     });
 
     console.log("📡 [CLIENT] Raw Response Object:", res);
@@ -80,13 +86,22 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({ onBa
     alert('Cover letter saved successfully!');
   };
 
-  const exportPDF = () => {
-    if (user?.plan === 'free') {
-      alert('PDF export is a premium feature. Please upgrade to access this functionality.');
-      return;
-    }
-    alert('PDF export feature will be available with backend integration');
-  };
+ const exportPDF = () => {
+  
+  if (!generatedLetter || generatedLetter.trim().length === 0) {
+    alert('No cover letter available to copy.');
+    return;
+  }
+
+  navigator.clipboard.writeText(generatedLetter)
+    .then(() => {
+      alert('Cover letter copied to clipboard!');
+    })
+    .catch((err) => {
+      console.error('Failed to copy:', err);
+      alert('Failed to copy the cover letter.');
+    });
+};
 
   if (!user) return null;
 
@@ -195,18 +210,9 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({ onBa
                       placeholder="e.g., Senior Software Engineer"
                     />
                   </div>
+
                   
-                  <div>
-                    <Label htmlFor="job-link">Job Posting Link (Optional)</Label>
-                    <Input
-                      id="job-link"
-                      type="url"
-                      value={jobLink}
-                      onChange={(e) => setJobLink(e.target.value)}
-                      placeholder="https://company.com/careers/job-id"
-                    />
-                  </div>
-                  
+
                   <div>
                     <Label htmlFor="job-description">Job Description</Label>
                     <Textarea
@@ -265,13 +271,10 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({ onBa
                     </div>
                     {generatedLetter && (
                       <div className="flex gap-2">
-                        <Button size="sm" onClick={saveCoverLetter}>
-                          <Save className="h-4 w-4 mr-2" />
-                          Save
-                        </Button>
+                      
                         <Button size="sm" variant="outline" onClick={exportPDF}>
-                          <Download className="h-4 w-4 mr-2" />
-                          Export PDF
+                          
+                          Copy
                         </Button>
                       </div>
                     )}

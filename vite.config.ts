@@ -3,12 +3,18 @@
   import react from '@vitejs/plugin-react-swc';
   import path from 'path';
 
+
+
   export default defineConfig({
     plugins: [react()],
+    optimizeDeps: {
+      include: ["pdfjs-dist/build/pdf.worker.min.mjs"],
+    },
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
       alias: {
         'vaul@1.1.2': 'vaul',
+        'pdfjs-dist/build/pdf.worker.entry': 'pdfjs-dist/build/pdf.worker.min.mjs',
         'sonner@2.0.3': 'sonner',
         'recharts@2.15.2': 'recharts',
         'react-resizable-panels@2.1.7': 'react-resizable-panels',
