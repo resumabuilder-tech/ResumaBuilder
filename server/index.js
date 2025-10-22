@@ -1,6 +1,6 @@
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
+import dotenv from "dotenv";
 import fetch from "node-fetch";
 
 dotenv.config();
@@ -9,23 +9,39 @@ const app = express();
 
 const allowedOrigins = [
   "https://resumize-pi.vercel.app",
-  "http://localhost:5173", // for local dev if needed
+  "http://localhost:5173",
 ];
 
+// ✅ FIXED: No trailing slashes and safe fallback
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // allow non-browser clients
+      if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
+        console.warn("❌ Blocked by CORS:", origin);
         callback(new Error("Not allowed by CORS"));
       }
     },
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
 
 app.use(express.json());
+
+// ✅ Quick route to test backend
+app.get("/", (req, res) => {
+  res.send("✅ Resumize Backend is running");
+});
+
+app.use((req, res, next) => {
+  console.log("🌍 Origin received:", req.headers.origin);
+  next();
+});
+
 
 app.post("/api/generate/cover-letter", async (req, res) => {
   try {
