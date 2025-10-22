@@ -7,11 +7,24 @@ dotenv.config();
 
 const app = express();
 
+const allowedOrigins = [
+  "https://resumize-pi.vercel.app",
+  "http://localhost:5173", // for local dev if needed
+];
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "https://resumize-pi.vercel.app",
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
   })
 );
+
 app.use(express.json());
 
 app.post("/api/generate/cover-letter", async (req, res) => {
