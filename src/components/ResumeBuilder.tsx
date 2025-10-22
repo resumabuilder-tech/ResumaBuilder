@@ -300,7 +300,7 @@ function escapeHtml(unsafe: string) {
 
 const handleDownloadPDF = async () => {
   try {
-    await handlePreview(); // Refresh resume preview first
+    await handlePreview(); // 🔄 Refresh template with latest form data
 
     const iframe = document.querySelector("iframe");
     if (!iframe) {
@@ -316,20 +316,18 @@ const handleDownloadPDF = async () => {
       return;
     }
 
-    // Options for html2pdf (typed as any to avoid TS namespace issues)
-    const opt: any = {
-      margin: 0.5,
-      filename: `${resumeData.personal_info?.name || "resume"}.pdf`,
-      image: { type: "jpeg", quality: 0.98 }, // literal "jpeg"
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
-    };
+    const canvas = await html2canvas(content, { scale: 2 });
+    const imgData = canvas.toDataURL("image/png");
 
-    // ✅ Generate and download PDF with selectable text
-    html2pdf().set(opt).from(content).save();
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = (canvas.height * pageWidth) / canvas.width;
+
+    pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
+    pdf.save(`${resumeData.personal_info?.name || "resume"}.pdf`);
   } catch (error) {
-    console.error("❌ Error generating text-based PDF:", error);
-    alert("Failed to generate text-based PDF. Please try again.");
+    console.error("Error generating PDF:", error);
+    alert("Failed to generate PDF. Please try again.");
   }
 };
 // 🧠 Clean function to remove placeholders and empty tags
