@@ -145,7 +145,7 @@ async function generateAIContent() {
   try {
     console.log("📤 [CLIENT] Sending payload to /api/generate/resume", payload);
 
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/generate/resume`, {
+    const response = await fetch('https://resumize-backend.vercel.app/api/generate/resume', {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
