@@ -74,10 +74,11 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ onBack }) => {
   const [newSkill, setNewSkill] = useState('');
 
   const handleTemplateSelect = (template: ResumeTemplate) => {
-  if (template.is_premium && user?.plan !== 'premium'|| 'paid') {
-    alert('⚠️ This is a premium template. Upgrade to Premium to use it!');
-    return;
-  }
+  if (template.is_premium && (user?.plan !== 'premium' && user?.plan !== 'paid')) {
+  alert('⚠️ This is a premium template. Upgrade to Premium to use it!');
+  return;
+}
+
                               
   setSelectedTemplate(template);
   setResumeData(prev => ({ ...prev, template: template.id }));
