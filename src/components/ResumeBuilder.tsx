@@ -32,7 +32,7 @@ declare module "html2pdf.js" {
 }
 
 export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ onBack }) => {
-  const { user, profile  } = useAuth();
+  const { user, profile, isLoading } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<string>('');
   const [showPreview, setShowPreview] = useState(false);
@@ -57,7 +57,9 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ onBack }) => {
   console.log('🧭 Current profile:', profile);
 }, [profile]);
 
-
+if (isLoading) {
+  return <div>Loading user data...</div>;
+}
 
   const [resumeData, setResumeData] = useState<Partial<Resume>>({
     title: 'My Resume',
