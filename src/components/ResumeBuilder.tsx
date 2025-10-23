@@ -307,16 +307,16 @@ function escapeHtml(unsafe: string) {
 
 const handleDownloadPDF = async () => {
   try {
-    // 1️⃣ Ensure the template is selected
+    // 1️⃣ Ensure template is selected
     if (!selectedTemplate?.url) {
       alert("Please select a template first.");
       return;
     }
 
-    // 2️⃣ Generate filled template HTML
+    // 2️⃣ Generate the preview (fills your HTML template with data)
     await handlePreview();
 
-    // Wait for React state to update
+    // Wait a bit for React state to update and render
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     if (!previewHTML) {
@@ -324,54 +324,47 @@ const handleDownloadPDF = async () => {
       return;
     }
 
-    // 3️⃣ Dynamically import jsPDF and html2canvas
-    const { jsPDF } = await import("jspdf");
-    const html2canvas = (await import("html2canvas")).default;
+    // 3️⃣ Create a temporary container for the filled HTML
+    const tempContainer = document.createElement("div");
+    tempContainer.id = "resume-to-download";
+    tempContainer.innerHTML = previewHTML;
+    tempContainer.style.width = "800px"; // consistent width
+    tempContainer.style.maxWidth = "100%";
+    tempContainer.style.margin = "0 auto";
+    tempContainer.style.background = "#fff";
+    tempContainer.style.padding = "20px";
+    document.body.appendChild(tempContainer);
 
-    // 4️⃣ Create a temporary container for HTML
-    const tempElement = document.createElement("div");
-    tempElement.innerHTML = previewHTML;
-    tempElement.style.position = "absolute";
-    tempElement.style.left = "-9999px";
-    tempElement.style.width = "800px"; // Adjust for scaling consistency
-    document.body.appendChild(tempElement);
+    // 4️⃣ Configure html2pdf options
+    const opt = {
+      margin: [5, 5, 5, 5] as [number, number, number, number], // top, left, bottom, right (in mm)
+      filename: `${resumeData.personal_info?.name || "resume"}.pdf`,
+      image: { type: "jpeg" as const, quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: tempContainer.scrollWidth,
+      },
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait" as const,
+      },
+    };
 
-    // 5️⃣ Capture HTML as image using html2canvas (for visual fidelity)
-    const canvas = await html2canvas(tempElement, {
-      scale: 2,
-      useCORS: true,
-      scrollX: 0,
-      scrollY: 0,
-      windowWidth: tempElement.scrollWidth,
-    });
+    // 5️⃣ Generate PDF and download
+    await html2pdf().set(opt).from(tempContainer).save();
 
-    const imgData = canvas.toDataURL("image/png");
-
-    // 6️⃣ Create and scale PDF
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: "a4",
-    });
-
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = (canvas.height * pageWidth) / canvas.width;
-
-    // Maintain correct aspect ratio
-    pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
-
-    // 7️⃣ Cleanup
-    document.body.removeChild(tempElement);
-
-    // 8️⃣ Save file
-    const filename = `${resumeData.personal_info?.name || "resume"}.pdf`;
-    pdf.save(filename);
-
+    // 6️⃣ Cleanup temporary element
+    document.body.removeChild(tempContainer);
   } catch (error) {
     console.error("Error generating PDF:", error);
     alert("Failed to generate PDF. Please try again.");
   }
 };
+
 
 
 // 🧠 Clean function to remove placeholders and empty tags
