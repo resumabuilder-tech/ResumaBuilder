@@ -25,7 +25,7 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({ onBa
  const generateCoverLetter = async () => {
   console.log("🚀 [CLIENT] generateCoverLetter() called");
 
-   if (!user || user.plan?.toLowerCase() === "free") {
+   if (user?.plan === "free") {
     alert("Cover Letter generation is a premium feature. Please upgrade to access this tool.");
     return;
   }
