@@ -45,6 +45,9 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ onBack }) => {
   const [aiResume, setAiResume] = useState<string | null>(null);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
 
+  if (isLoading) {
+  return <div>Loading user data...</div>;
+}
   useEffect(() => {
     const loadTemplates = async () => {
       const templates = await fetchTemplates();
@@ -57,9 +60,7 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ onBack }) => {
   console.log('🧭 Current profile:', profile);
 }, [profile]);
 
-if (isLoading) {
-  return <div>Loading user data...</div>;
-}
+
 
   const [resumeData, setResumeData] = useState<Partial<Resume>>({
     title: 'My Resume',
