@@ -53,6 +53,10 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ onBack }) => {
     };
     loadTemplates();
   }, []);
+  useEffect(() => {
+  console.log('🧭 Current profile:', profile);
+}, [profile]);
+
 
 
   const [resumeData, setResumeData] = useState<Partial<Resume>>({
