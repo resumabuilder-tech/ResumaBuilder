@@ -220,10 +220,6 @@ interface AIResume {
   }[];
   projects: any[];
   certifications: any[];
-  template?: {
-    name?: string;
-    url?: string;
-  };
 }
 
 async function buildPreviewFromAI(aiResume: AIResume) {
@@ -304,44 +300,36 @@ function escapeHtml(unsafe: string) {
 
 const handleDownloadPDF = async () => {
   try {
-    // Ensure a template is selected that has a URL
-    if (!selectedTemplate?.url) {
-      alert("Please select a template before downloading the PDF.");
+    await handlePreview(); // 🔄 Refresh template with latest form data
+
+    const iframe = document.querySelector("iframe");
+    if (!iframe) {
+      alert("Please preview your resume before downloading.");
       return;
     }
 
-    // Fetch the HTML content of the selected template
-    const response = await fetch(selectedTemplate.url);
-    let html = await response.text();
+    const iframeDocument = iframe.contentDocument || iframe.contentWindow?.document;
+    const content = iframeDocument?.body;
 
-    // Replace placeholders with actual resume data
-    html = html
-      .replace(/{{name}}/g, resumeData.personal_info?.name || "")
-      .replace(/{{email}}/g, resumeData.personal_info?.email || "")
-      // Add more replacements as needed...
+    if (!content) {
+      alert("No preview content found.");
+      return;
+    }
 
-    // Clean and wrap into DOM
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = cleanTemplate(html);
-    document.body.appendChild(tempDiv); // temporarily add to DOM
-
-    // Capture to PDF
-    const canvas = await html2canvas(tempDiv, { scale: 2 });
+    const canvas = await html2canvas(content, { scale: 2 });
     const imgData = canvas.toDataURL("image/png");
+
     const pdf = new jsPDF("p", "mm", "a4");
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = (canvas.height * pageWidth) / canvas.width;
+
     pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
     pdf.save(`${resumeData.personal_info?.name || "resume"}.pdf`);
-
-    // Cleanup
-    document.body.removeChild(tempDiv);
   } catch (error) {
     console.error("Error generating PDF:", error);
     alert("Failed to generate PDF. Please try again.");
   }
 };
-
 // 🧠 Clean function to remove placeholders and empty tags
 
 const cleanTemplate = (html: string) => {
