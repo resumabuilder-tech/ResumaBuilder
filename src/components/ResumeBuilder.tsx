@@ -32,7 +32,7 @@ declare module "html2pdf.js" {
 }
 
 export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ onBack }) => {
-  const { user } = useAuth();
+  const { user, profile  } = useAuth();
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<string>('');
   const [showPreview, setShowPreview] = useState(false);
@@ -74,10 +74,11 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ onBack }) => {
   const [newSkill, setNewSkill] = useState('');
 
   const handleTemplateSelect = (template: ResumeTemplate) => {
-  if (template.is_premium && (user?.plan !== 'premium' && user?.plan !== 'paid')) {
+    if (template.is_premium && profile?.plan !== 'paid') {
   alert('⚠️ This is a premium template. Upgrade to Premium to use it!');
   return;
 }
+
 
                               
   setSelectedTemplate(template);
