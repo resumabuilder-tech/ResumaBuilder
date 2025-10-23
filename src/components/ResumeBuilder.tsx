@@ -298,38 +298,35 @@ function escapeHtml(unsafe: string) {
 
   
 
+
 const handleDownloadPDF = async () => {
   try {
-    await handlePreview(); // 🔄 Refresh template with latest form data
+    await handlePreview(); // 🔄 Update preview content
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for rendering
 
     const iframe = document.querySelector("iframe");
-    if (!iframe) {
-      alert("Please preview your resume before downloading.");
-      return;
-    }
-
-    const iframeDocument = iframe.contentDocument || iframe.contentWindow?.document;
+    const iframeDocument = iframe?.contentDocument || iframe?.contentWindow?.document;
     const content = iframeDocument?.body;
 
     if (!content) {
-      alert("No preview content found.");
+      alert("Please preview your resume first.");
       return;
     }
 
-    const canvas = await html2canvas(content, { scale: 2 });
-    const imgData = canvas.toDataURL("image/png");
+    const options: import("html2pdf.js").Html2PdfOptions = {
+      margin: [0.5, 0.5, 0.5, 0.5], // ✅ Four-value tuple for TypeScript compatibility
+      filename: `${resumeData.personal_info?.name || "resume"}.pdf`,
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
+    };
 
-    const pdf = new jsPDF("p", "mm", "a4");
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = (canvas.height * pageWidth) / canvas.width;
-
-    pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
-    pdf.save(`${resumeData.personal_info?.name || "resume"}.pdf`);
+    await html2pdf().set(options).from(content).save();
   } catch (error) {
-    console.error("Error generating PDF:", error);
+    console.error("Error creating PDF:", error);
     alert("Failed to generate PDF. Please try again.");
   }
 };
+
 // 🧠 Clean function to remove placeholders and empty tags
 
 const cleanTemplate = (html: string) => {
