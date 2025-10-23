@@ -305,29 +305,72 @@ function escapeHtml(unsafe: string) {
     .replace(/'/g, "&#039;");
 }
 
+const handleDownloadPDF = async () => {
+  try {
+    // 1️⃣ Ensure the template is selected
+    if (!selectedTemplate?.url) {
+      alert("Please select a template first.");
+      return;
+    }
 
-const handleDownloadPDF = () => {
-  const element = document.getElementById('resume-preview');
-  if (!element) return;
+    // 2️⃣ Generate filled template HTML
+    await handlePreview();
 
-  const options = {
-    margin: [0, 0, 0, 0] as [number, number, number, number],
-    filename: 'resume.pdf',
-    html2canvas: {
+    // Wait for React state to update
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    if (!previewHTML) {
+      alert("No preview available to export.");
+      return;
+    }
+
+    // 3️⃣ Dynamically import jsPDF and html2canvas
+    const { jsPDF } = await import("jspdf");
+    const html2canvas = (await import("html2canvas")).default;
+
+    // 4️⃣ Create a temporary container for HTML
+    const tempElement = document.createElement("div");
+    tempElement.innerHTML = previewHTML;
+    tempElement.style.position = "absolute";
+    tempElement.style.left = "-9999px";
+    tempElement.style.width = "800px"; // Adjust for scaling consistency
+    document.body.appendChild(tempElement);
+
+    // 5️⃣ Capture HTML as image using html2canvas (for visual fidelity)
+    const canvas = await html2canvas(tempElement, {
       scale: 2,
       useCORS: true,
       scrollX: 0,
       scrollY: 0,
-      windowWidth: window.innerWidth,
-    },
-    jsPDF: {
-      unit: 'mm',
-      format: 'a4',
-      orientation: 'portrait' as 'portrait', // ✅ literal type
-    },
-  };
+      windowWidth: tempElement.scrollWidth,
+    });
 
-  html2pdf().set(options).from(element).save();
+    const imgData = canvas.toDataURL("image/png");
+
+    // 6️⃣ Create and scale PDF
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = (canvas.height * pageWidth) / canvas.width;
+
+    // Maintain correct aspect ratio
+    pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
+
+    // 7️⃣ Cleanup
+    document.body.removeChild(tempElement);
+
+    // 8️⃣ Save file
+    const filename = `${resumeData.personal_info?.name || "resume"}.pdf`;
+    pdf.save(filename);
+
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    alert("Failed to generate PDF. Please try again.");
+  }
 };
 
 
