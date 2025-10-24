@@ -83,7 +83,7 @@ export const ATSChecker: React.FC<ATSCheckerProps> = ({ onBack }) => {
     setIsAnalyzing(true);
     try {
       console.log('📤 Sending ATS analysis request...');
-      const res = await fetch('https://resumize-backend.vercel.app/api/generate/resume', {
+      const res = await fetch('https://resumize-backend.vercel.app/api/analyze/ats', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ resumeText, jobDescription }),

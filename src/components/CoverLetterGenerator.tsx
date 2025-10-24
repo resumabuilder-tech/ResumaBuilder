@@ -43,7 +43,7 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({ onBa
 
     console.log("📦 [CLIENT] Sending Request Body:", { profile, company, job_title: jobTitle, points });
 
-    const res = await fetch('https://resumize-backend.vercel.app/api/generate/resume', {
+    const res = await fetch('https://resumize-backend.vercel.app/api/generate/cover-letter', {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
