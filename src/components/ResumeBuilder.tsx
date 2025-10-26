@@ -75,7 +75,10 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ onBack }) => {
     education: [{ degree: '', institution: '', year: '', gpa: '' }],
     experience: [{ title: '', company: '', duration: '', description: '' }],
     skills: [],
-    template: 'modern'
+    template: 'modern',
+    technologies: [],
+    languages: [],
+    references: []
   });
 
   const [newSkill, setNewSkill] = useState('');
@@ -438,12 +441,31 @@ const handlePreview = async () => {
   }
 };
 
+// 🧩 Technology management state
+const [newTechnology, setNewTechnology] = useState<string>('');
 
+// 🧠 Add a new technology
+const addTechnology = () => {
+  if (newTechnology.trim() !== '') {
+    setResumeData((prev) => ({
+      ...prev,
+      technologies: [...(prev.technologies || []), newTechnology.trim()],
+    }));
+    setNewTechnology('');
+  }
+};
 
-  // Template Selection Screen
-  if (currentStep === 'templates') {
-    return (
-      <div className="min-h-screen bg-gray-50">
+const removeTechnology = (tech: string) => {
+  setResumeData((prev) => ({
+    ...prev,
+    technologies: (prev.technologies || []).filter((t) => t !== tech),
+  }));
+};
+
+// Template Selection Screen
+if (currentStep === 'templates') {
+  return (
+    <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <header className="bg-white border-b border-border p-4 sticky top-0 z-10">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -845,6 +867,37 @@ const handlePreview = async () => {
                       placeholder="johndoe.com"
                     />
                   </div>
+                  <div>
+  <Label htmlFor="photo">Profile Photo</Label>
+  <Input
+    id="photo"
+    type="file"
+    accept="image/*"
+    onChange={(e) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setResumeData(prev => ({
+            ...prev,
+            personal_info: { ...prev.personal_info!, photo: reader.result as string }
+          }));
+        };
+        reader.readAsDataURL(file);
+      }
+    }}
+  />
+  {resumeData.personal_info?.photo && (
+    <div className="mt-2">
+      <img
+        src={resumeData.personal_info.photo}
+        alt="Profile"
+        className="w-24 h-24 object-cover rounded-full border"
+      />
+    </div>
+  )}
+</div>
+
                 </CardContent>
               </Card>
 
@@ -1150,6 +1203,42 @@ const handlePreview = async () => {
                   </div>
                 </CardContent>
               </Card>
+<Card>
+  <CardHeader>
+    <CardTitle>Technologies</CardTitle>
+    <CardDescription>Add the tools and technologies you’ve worked with</CardDescription>
+  </CardHeader>
+  <CardContent className="space-y-4">
+    <div className="flex gap-2">
+      <Input
+        value={newTechnology}
+        onChange={(e) => setNewTechnology(e.target.value)}
+        placeholder="Add a technology (e.g., React, FastAPI)"
+        onKeyPress={(e) => e.key === 'Enter' && addTechnology()}
+      />
+      <Button onClick={addTechnology}>
+        <Plus className="h-4 w-4" />
+      </Button>
+    </div>
+
+    <div className="flex flex-wrap gap-2">
+      {(resumeData.technologies || []).map((tech, index) => (
+        <Badge key={index} variant="secondary" className="pl-3 pr-1">
+          {tech}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-5 w-5 p-0 ml-2"
+            onClick={() => removeTechnology(tech)}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </Badge>
+      ))}
+    </div>
+  </CardContent>
+</Card>
+
 
               {/* AI Generation */}
               <Card>
@@ -1261,6 +1350,16 @@ const handlePreview = async () => {
               {resumeData.personal_info?.location && <p>{resumeData.personal_info.location}</p>}
             </div>
           </div>
+          {resumeData.personal_info?.photo && (
+  <div className="flex justify-center mb-4">
+    <img
+      src={resumeData.personal_info.photo}
+      alt="Profile"
+      className="w-28 h-28 object-cover rounded-full border"
+    />
+  </div>
+)}
+
 
           {/* Experience */}
           {(resumeData.experience?.length ?? 0) > 0 && resumeData.experience?.[0]?.title && (

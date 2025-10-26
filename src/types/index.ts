@@ -20,7 +20,7 @@ export type Resume = {
   owner: string;
   user_id?: string;
   title: string;
-  summary?: string; // 👈 add this
+  summary?: string;
   personal_info?: {
     name?: string;
     email?: string;
@@ -29,6 +29,7 @@ export type Resume = {
     linkedin?: string;
     portfolio?: string;
     github?: string;
+    photo?: string; // ✅ Added this line
   };
   education?: {
     degree?: string;
@@ -47,7 +48,6 @@ export type Resume = {
     issuer?: string;
     year?: string;
   }[];
-
   projects?: {
     title?: string;
     description?: string;
@@ -58,7 +58,16 @@ export type Resume = {
   template?: string | number;
   created_at?: string;
   updated_at?: string;
+  technologies?: string[];
+  languages?: string[];
+  references?: {
+    name: string;
+    designation: string;
+    company: string;
+    contact: string;
+  }[];
 };
+
 
 
 export interface CoverLetter {
