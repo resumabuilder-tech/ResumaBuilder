@@ -440,6 +440,22 @@ const handlePreview = async () => {
     alert("Failed to load template preview.");
   }
 };
+const [newLanguage, setNewLanguage] = useState('');
+const addLanguage = () => {
+  if (!newLanguage.trim()) return;
+  setResumeData(prev => ({
+    ...prev,
+    languages: [...(prev.languages || []), newLanguage.trim()]
+  }));
+  setNewLanguage('');
+};
+const removeLanguage = (index: number) => {
+  setResumeData(prev => ({
+    ...prev,
+    languages: prev.languages?.filter((_, i) => i !== index)
+  }));
+};
+
 
 // 🧩 Technology management state
 const [newTechnology, setNewTechnology] = useState<string>('');
@@ -1238,6 +1254,110 @@ if (currentStep === 'templates') {
     </div>
   </CardContent>
 </Card>
+<Card>
+  <CardHeader>
+    <CardTitle>Languages</CardTitle>
+    <CardDescription>List languages you speak or write</CardDescription>
+  </CardHeader>
+  <CardContent className="space-y-4">
+    <div className="flex gap-2">
+      <Input
+        value={newLanguage}
+        onChange={(e) => setNewLanguage(e.target.value)}
+        placeholder="Add a language (e.g., English, Urdu)"
+        onKeyPress={(e) => e.key === 'Enter' && addLanguage()}
+      />
+      <Button onClick={addLanguage}>
+        <Plus className="h-4 w-4" />
+      </Button>
+    </div>
+    <div className="flex flex-wrap gap-2">
+      {resumeData.languages?.map((lang, index) => (
+        <Badge key={index} variant="secondary" className="pl-3 pr-1">
+          {lang}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-5 w-5 p-0 ml-2"
+            onClick={() => removeLanguage(index)}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </Badge>
+      ))}
+    </div>
+  </CardContent>
+</Card>
+<Card>
+  <CardHeader>
+    <CardTitle>References</CardTitle>
+    <CardDescription>Add references (optional)</CardDescription>
+  </CardHeader>
+  <CardContent className="space-y-4">
+    {(resumeData.references || []).map((ref, index) => (
+      <div key={index} className="space-y-2 border p-3 rounded-lg">
+        <Label>Full Name</Label>
+        <Input
+          value={ref.name}
+          onChange={(e) => {
+            const updated = [...(resumeData.references || [])];
+            updated[index].name = e.target.value;
+            setResumeData(prev => ({ ...prev, references: updated }));
+          }}
+          placeholder="e.g., Mr. Talha Khan"
+        />
+        <Label>Designation</Label>
+        <Input
+          value={ref.designation}
+          onChange={(e) => {
+            const updated = [...(resumeData.references || [])];
+            updated[index].designation = e.target.value;
+            setResumeData(prev => ({ ...prev, references: updated }));
+          }}
+          placeholder="e.g., Senior Software Engineer"
+        />
+        <Label>Company</Label>
+        <Input
+          value={ref.company}
+          onChange={(e) => {
+            const updated = [...(resumeData.references || [])];
+            updated[index].company = e.target.value;
+            setResumeData(prev => ({ ...prev, references: updated }));
+          }}
+          placeholder="e.g., TechCorp Pvt. Ltd."
+        />
+        <Label>Contact</Label>
+        <Input
+          value={ref.contact}
+          onChange={(e) => {
+            const updated = [...(resumeData.references || [])];
+            updated[index].contact = e.target.value;
+            setResumeData(prev => ({ ...prev, references: updated }));
+          }}
+          placeholder="e.g., +92-300-1234567 / email@example.com"
+        />
+        <Button
+          variant="destructive"
+          onClick={() => {
+            const updated = [...(resumeData.references || [])];
+            updated.splice(index, 1);
+            setResumeData(prev => ({ ...prev, references: updated }));
+          }}
+        >
+          Remove
+        </Button>
+      </div>
+    ))}
+    <Button
+      onClick={() => {
+        const updated = [...(resumeData.references || []), { name: "", designation: "", company: "", contact: "" }];
+        setResumeData(prev => ({ ...prev, references: updated }));
+      }}
+    >
+      Add Reference
+    </Button>
+  </CardContent>
+</Card>
 
 
               {/* AI Generation */}
@@ -1411,6 +1531,55 @@ if (currentStep === 'templates') {
               </div>
             </div>
           )}
+
+          {/* Skills */}
+          {(resumeData.skills?.length ?? 0) > 0 && (
+            <div className="mb-6">
+              <h3 className="text-primary mb-3 border-b pb-2">Skills</h3>
+              <div className="flex flex-wrap gap-2">
+                {(resumeData.skills || []).map((skill, i) => (
+                  <Badge key={i} variant="secondary">{skill}</Badge>
+                ))}
+              </div>
+            </div>
+          )}
+          {(resumeData.technologies?.length ?? 0) > 0 && (
+  <div className="mb-6">
+    <h3 className="text-primary mb-3 border-b pb-2">Technologies Used</h3>
+    <div className="flex flex-wrap gap-2">
+      {(resumeData.technologies ?? []).map((tech, index) => (
+        <Badge key={index} variant="secondary">{tech}</Badge>
+      ))}
+    </div>
+  </div>
+)}
+
+
+          {(resumeData.languages?.length ?? 0) > 0 && (
+  <div className="mb-6">
+    <h3 className="text-primary mb-3 border-b pb-2">Languages</h3>
+    <div className="flex flex-wrap gap-2">
+      {(resumeData.languages ?? []).map((lang, index) => (
+        <Badge key={index} variant="secondary">{lang}</Badge>
+      ))}
+    </div>
+  </div>
+)}
+{(resumeData.references?.length ?? 0) > 0 && (
+  <div className="mb-6">
+    <h3 className="text-primary mb-3 border-b pb-2">References</h3>
+    <div className="space-y-3">
+      {(resumeData.references ?? []).map((ref, index) => (
+        <div key={index}>
+          <p className="font-medium">{ref.name}</p>
+          <p className="text-muted-foreground">{ref.designation}, {ref.company}</p>
+          <p className="text-muted-foreground">{ref.contact}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
         </div>
       </div>
     </CardContent>
