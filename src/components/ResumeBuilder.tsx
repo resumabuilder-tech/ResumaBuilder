@@ -148,6 +148,11 @@ async function generateAIContent() {
       education: resumeData.education || [],
       projects: resumeData.projects || [],
       certifications: resumeData.certifications || [],
+
+      // 🆕 Newly added fields:
+      technologies: resumeData.technologies || [],
+      languages: resumeData.languages || [],
+      references: resumeData.references || [],
     },
     job_title: resumeData.title || "",
     target_skills: (resumeData.skills || []).slice(0, 6),
@@ -165,7 +170,6 @@ async function generateAIContent() {
 
     console.log("📡 [CLIENT] Raw response status:", response.status, response.statusText);
 
-    // ✅ Read JSON only once!
     const data = await response.json();
     console.log("📥 [CLIENT] Backend response:", data);
 
@@ -176,7 +180,7 @@ async function generateAIContent() {
 
     const resumeDataFromAI = data.resume;
 
-    // ✅ Update your state safely
+    // ✅ Include your new fields in the update
     setResumeData((prev) => ({
       ...prev,
       summary: resumeDataFromAI.summary || "",
@@ -185,9 +189,11 @@ async function generateAIContent() {
       education: resumeDataFromAI.education || [],
       projects: resumeDataFromAI.projects || [],
       certifications: resumeDataFromAI.certifications || [],
+      technologies: resumeDataFromAI.technologies || prev.technologies || [],
+      languages: resumeDataFromAI.languages || prev.languages || [],
+      references: resumeDataFromAI.references || prev.references || [],
     }));
 
-    // ✅ Build the preview
     await buildPreviewFromAI(resumeDataFromAI);
 
     console.log("✅ [CLIENT] Resume successfully generated and preview built.");
@@ -199,6 +205,7 @@ async function generateAIContent() {
     console.log("🟢 [CLIENT] generateAIContent finished");
   }
 }
+
 
 
 // ✅ Helper to update local resume state
