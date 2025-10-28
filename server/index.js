@@ -22,7 +22,7 @@ app.use(
 );
 
 app.use(express.json());
-app.use(express.json());
+
 
 // ✅ Quick route to test backend
 app.get("/", (req, res) => {
@@ -132,6 +132,30 @@ Important: return ONLY the JSON object (no explanations). Use low temperature fo
         warning: "AI did not return strict JSON — see rawText for debugging.",
       });
     }
+        // Ensure all expected keys exist (normalize)
+    const normalized = {
+      summary: parsed.summary || "",
+      skills: parsed.skills || [],
+      technologies: parsed.technologies || parsed.tech || [],
+      languages: parsed.languages || [],
+      references: parsed.references || [],
+      experience: parsed.experience || [],
+      education: parsed.education || [],
+      projects: parsed.projects || [],
+      certifications: parsed.certifications || [],
+      extracted_keywords: parsed.extracted_keywords || [],
+      matched_keywords: parsed.matched_keywords || [],
+      // keep any raw fields for debugging
+      __raw_ai: parsed,
+    };
+
+    return res.json({ success: true, resume: normalized });
+  } catch (err) {
+    console.error("❌ Resume generation failed:", err);
+    return res.status(500).json({ success: false, error: "Failed to generate resume" });
+  }
+});
+    
 
 app.post("/api/generate/cover-letter", async (req, res) => {
   try {
@@ -173,29 +197,7 @@ app.post("/api/generate/cover-letter", async (req, res) => {
 
 
 
-    // Ensure all expected keys exist (normalize)
-    const normalized = {
-      summary: parsed.summary || "",
-      skills: parsed.skills || [],
-      technologies: parsed.technologies || parsed.tech || [],
-      languages: parsed.languages || [],
-      references: parsed.references || [],
-      experience: parsed.experience || [],
-      education: parsed.education || [],
-      projects: parsed.projects || [],
-      certifications: parsed.certifications || [],
-      extracted_keywords: parsed.extracted_keywords || [],
-      matched_keywords: parsed.matched_keywords || [],
-      // keep any raw fields for debugging
-      __raw_ai: parsed,
-    };
 
-    return res.json({ success: true, resume: normalized });
-  } catch (err) {
-    console.error("❌ Resume generation failed:", err);
-    return res.status(500).json({ success: false, error: "Failed to generate resume" });
-  }
-});
 
 // Basic root for browser check
 app.get("/", (_req, res) => res.send("Resume API — POST /api/generate/resume"));
