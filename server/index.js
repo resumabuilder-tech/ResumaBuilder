@@ -114,6 +114,8 @@ Important: return ONLY the JSON object (no explanations). Use low temperature fo
         max_tokens: 2000,
       }),
     });
+ console.log("🔐 Using OpenAI Key:", process.env.OPENAI_API_KEY ? "✅ Loaded" : "❌ Missing");
+ console.log("🧾 Prompt size:", prompt.length, "characters");
 
     const data = await response.json();
     const raw = data.choices?.[0]?.message?.content || "";
@@ -160,6 +162,7 @@ Important: return ONLY the JSON object (no explanations). Use low temperature fo
     console.error("❌ Resume generation failed:", err);
     return res.status(500).json({ success: false, error: "Failed to generate resume" });
   }
+  
 });
     
 
