@@ -3,8 +3,9 @@ import cors from "cors";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
 
-dotenv.config();
 
+dotenv.config();
+const app = express();
 
 // --- CORS: allow your frontend origin(s) here ---
 app.use(
@@ -40,45 +41,6 @@ const parseAIJson = (text) => {
     return null;
   }
 };
-
-app.post("/api/generate/cover-letter", async (req, res) => {
-  try {
-    const jobTitle = req.body.jobTitle || req.body.job_title;
-    const jobDescription = req.body.jobDescription || req.body.points;
-
-    const prompt = `
-      Write a professional and personalized cover letter for the position of ${jobTitle}.
-      Job Description: ${jobDescription}
-    `;
-
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: "You are a professional HR assistant." },
-          { role: "user", content: prompt },
-        ],
-      }),
-    });
-
-    const data = await response.json();
-
-    res.json({
-      cover_letter:
-        data.choices?.[0]?.message?.content || "Error generating cover letter.",
-    });
-  } catch (err) {
-    console.error("Error:", err);
-    res.status(500).json({ error: "Failed to generate cover letter" });
-  }
-});
-
-
 app.post("/api/generate/resume", async (req, res) => {
   try {
     const { profile = {}, job_title, target_skills = [], template_url, jobDescription } = req.body;
@@ -170,6 +132,46 @@ Important: return ONLY the JSON object (no explanations). Use low temperature fo
         warning: "AI did not return strict JSON — see rawText for debugging.",
       });
     }
+
+app.post("/api/generate/cover-letter", async (req, res) => {
+  try {
+    const jobTitle = req.body.jobTitle || req.body.job_title;
+    const jobDescription = req.body.jobDescription || req.body.points;
+
+    const prompt = `
+      Write a professional and personalized cover letter for the position of ${jobTitle}.
+      Job Description: ${jobDescription}
+    `;
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: "You are a professional HR assistant." },
+          { role: "user", content: prompt },
+        ],
+      }),
+    });
+
+    const data = await response.json();
+
+    res.json({
+      cover_letter:
+        data.choices?.[0]?.message?.content || "Error generating cover letter.",
+    });
+  } catch (err) {
+    console.error("Error:", err);
+    res.status(500).json({ error: "Failed to generate cover letter" });
+  }
+});
+
+
+
 
     // Ensure all expected keys exist (normalize)
     const normalized = {
