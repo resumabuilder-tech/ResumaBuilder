@@ -55,10 +55,15 @@ You are an expert resume writer and ATS optimizer.
 Given the user profile and optional job description below, produce a strict JSON object (no text, no markdown, no code fences) representing an ATS-optimized professional resume.
 
 Requirements:
-1) Use concise, action-oriented bullet content and industry keywords suitable for ATS parsing.
-2) Prioritize matching keywords from the job description (if provided) and incorporate user's target_skills/technologies.
-3) Keep each section focused and machine-readable.
-4) Output valid JSON only. If a field is empty, output an empty array or empty string where appropriate.
+1) Use concise, measurable, and achievement-based bullet points (e.g. “Improved security efficiency by 25%”).
+2) Integrate as many relevant ATS-friendly terms and domain keywords as possible from:
+   - Job description (if available)
+   - Target skills
+   - Profile technologies
+   - skills
+3) Ensure language clarity for ATS systems (avoid pronouns, passive voice).
+4) Optimize for recruiter scanning — clear section names, bullet lists, and consistent formatting.
+
 
 Output JSON schema (must follow exactly — additional optional fields allowed):
 {
@@ -80,7 +85,7 @@ Output JSON schema (must follow exactly — additional optional fields allowed):
 }
 
 Profile JSON:
-${JSON.stringify(profile, null, 2)}
+${JSON.stringify(profile)}
 
 Job Title: ${job_title || ""}
 Target Skills: ${JSON.stringify(target_skills)}
@@ -104,8 +109,9 @@ Important: return ONLY the JSON object (no explanations). Use low temperature fo
           { role: "system", content: "You are an expert resume writer and ATS optimizer. Output strict JSON only." },
           { role: "user", content: prompt },
         ],
+
         temperature: 0.15,
-        max_tokens: 1200,
+        max_tokens: 2000,
       }),
     });
 
