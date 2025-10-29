@@ -239,6 +239,13 @@ interface AIResume {
     
   }[];
   image?: string;
+  languages?: string[];
+  references?: {
+    name: string;
+    position: string;
+    company: string;
+    contact: string;
+  }[];
   education: {
     degree: string;
     institution: string;
@@ -264,7 +271,6 @@ async function buildPreviewFromAI(aiResume: AIResume) {
 
     if (typeof aiResume === "object") {
       // ✅ Replace image placeholder if present in the template
-      html = html.replace(/{{image}}/g, aiResume.image || resumeData.image || "");
       html = html
          .replace(
   /{{photo}}/g,
@@ -274,6 +280,12 @@ async function buildPreviewFromAI(aiResume: AIResume) {
 )
         .replace(/{{summary}}/g, aiResume.summary || "")
         .replace(/{{skills}}/g, (aiResume.skills || []).join(", "))
+        .replace(
+      /{{languages}}/g,
+      (aiResume.languages || [])
+        .map(l => `<div class="skill-item">${l}</div>`)
+        .join("") || ""
+    )
         .replace(
           /{{experience}}/g,
           (aiResume.experience || [])
@@ -294,6 +306,19 @@ async function buildPreviewFromAI(aiResume: AIResume) {
             )
             .join("<br>")
         )
+         .replace(
+      /{{references}}/g,
+      (aiResume.references || [])
+        .map(
+          (r) => `
+          <div class="reference-item">
+            <div class="reference-name">${r.name || ""}</div>
+            <div class="reference-position">${r.position || ""}</div>
+            <div class="reference-contact">${r.contact || ""}</div>
+          </div>`
+        )
+        .join("")
+    )
         .replace(
           /{{projects}}/g,
           (aiResume.projects || [])
