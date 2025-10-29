@@ -31,6 +31,7 @@ export type Resume = {
     github?: string;
     photo?: string; // ✅ Added this line
   };
+  image?: string;
   education?: {
     degree?: string;
     institution?: string;

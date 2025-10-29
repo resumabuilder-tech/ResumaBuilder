@@ -71,7 +71,8 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ onBack }) => {
       location: '',
       linkedin: '',
       portfolio: ''
-    },
+    }, 
+    image: '',
     education: [{ degree: '', institution: '', year: '', gpa: '' }],
     experience: [{ title: '', company: '', duration: '', description: '' }],
     skills: [],
@@ -87,15 +88,11 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ onBack }) => {
     if (template.is_premium && profile?.plan !== 'paid') {
   alert('⚠️ This is a premium template. Upgrade to Premium to use it!');
   return;
-}
-
-
-                              
+}                             
   setSelectedTemplate(template);
   setResumeData(prev => ({ ...prev, template: template.id }));
   setCurrentStep('editor');
 };
-
 
   const addEducation = () => {
     setResumeData(prev => ({
@@ -153,6 +150,7 @@ async function generateAIContent() {
       technologies: resumeData.technologies || [],
       languages: resumeData.languages || [],
       references: resumeData.references || [],
+      photo: resumeData.personal_info?.photo || "",
     },
     job_title: resumeData.title || "",
     target_skills: (resumeData.skills || []).slice(0, 6),
@@ -183,6 +181,10 @@ async function generateAIContent() {
     // ✅ Include your new fields in the update
     setResumeData((prev) => ({
       ...prev,
+      personal_info: {
+    ...prev.personal_info,
+    photo: prev.personal_info?.photo || "", // ✅ Keep existing uploaded photo
+  },
       summary: resumeDataFromAI.summary || "",
       skills: resumeDataFromAI.skills || [],
       experience: resumeDataFromAI.experience || [],
@@ -212,6 +214,10 @@ async function generateAIContent() {
 const handleAIResponse = (aiResume: AIResume) => {
   setResumeData((prev) => ({
     ...prev,
+    personal_info: {
+      ...prev.personal_info,
+      photo: prev.personal_info?.photo || "",
+    },
     summary: aiResume.summary || "",
     skills: aiResume.skills || [],
     experience: aiResume.experience || [],
@@ -230,7 +236,9 @@ interface AIResume {
     company: string;
     duration: string;
     description: string;
+    
   }[];
+  image?: string;
   education: {
     degree: string;
     institution: string;
@@ -255,7 +263,15 @@ async function buildPreviewFromAI(aiResume: AIResume) {
     let html = await resp.text();
 
     if (typeof aiResume === "object") {
+      // ✅ Replace image placeholder if present in the template
+      html = html.replace(/{{image}}/g, aiResume.image || resumeData.image || "");
       html = html
+         .replace(
+  /{{photo}}/g,
+  resumeData.personal_info?.photo
+    ? `<img src="${resumeData.personal_info.photo}" alt="Profile" style="width:120px;height:120px;border-radius:50%;object-fit:cover;">`
+    : ""
+)
         .replace(/{{summary}}/g, aiResume.summary || "")
         .replace(/{{skills}}/g, (aiResume.skills || []).join(", "))
         .replace(
@@ -402,7 +418,9 @@ const handlePreview = async () => {
     if (contentSource) {
       html = html.replace(/{{ai_resume}}/g, contentSource);
     } else {
+      
       html = html
+        .replace(/{{image}}/g, resumeData.image ? `<img src="${resumeData.image}" alt="Profile" style="width:120px;height:120px;border-radius:50%;">` : "")
         .replace(/{{name}}/g, resumeData.personal_info?.name || "")
         .replace(/{{email}}/g, resumeData.personal_info?.email || "")
         .replace(/{{phone}}/g, resumeData.personal_info?.phone || "")
