@@ -463,17 +463,16 @@ const handlePreview = async () => {
 
 
     const contentSource = aiResume && aiResume.trim().length > 0 ? aiResume : null;
-     const safePhoto = (resumeData.personal_info?.photo || "")
-    .replace(/\r?\n|\r/g, "")
-    .replace(/"/g, "&quot;"); // Prevents quotes from breaking HTML
-
+    
     if (contentSource) {
       html = html.replace(/{{ai_resume}}/g, contentSource);
     } else {
-     
+      const safePhoto = (resumeData.personal_info?.photo || "")
+        .replace(/\r?\n|\r/g, "")
+        .replace(/"/g, "&quot;"); // Prevents quotes from breaking HTML
 
       html = html
-       .replace(/{{photo}}/g, safePhoto)
+        .replace(/{{photo}}/g, safePhoto)
         .replace(/{{name}}/g, resumeData.personal_info?.name || "")
         .replace(/{{email}}/g, resumeData.personal_info?.email || "")
         .replace(/{{phone}}/g, resumeData.personal_info?.phone || "")
@@ -527,11 +526,11 @@ const handlePreview = async () => {
             .map((cert) => `${cert.name} - ${cert.issuer} (${cert.year})`)
             .join("<br>")
         );
-        
-    }
-    
     console.log("Photo data:", safePhoto.slice(0, 100)); // first 100 chars
     console.log("Final HTML:", html.slice(0, 500));
+    }
+    
+    
 
     html = cleanTemplate(html);
     setPreviewHTML(html);
