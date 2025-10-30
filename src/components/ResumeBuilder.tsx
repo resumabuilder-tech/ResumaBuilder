@@ -301,7 +301,7 @@ async function buildPreviewFromAI(aiResume: AIResume) {
          .replace(
   /{{photo}}/g,
   aiResume.personal_info?.photo || "")
-.replace(/{{name}}/g, aiResume.personal_info?.name || "")
+        .replace(/{{name}}/g, aiResume.personal_info?.name || "")
         .replace(/{{email}}/g, aiResume.personal_info?.email || "")
         .replace(/{{phone}}/g, aiResume.personal_info?.phone || "")
         .replace(/{{location}}/g, aiResume.personal_info?.location || "")
