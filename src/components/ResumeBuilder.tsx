@@ -298,17 +298,7 @@ async function buildPreviewFromAI(aiResume: AIResume) {
     if (typeof aiResume === "object") {
       // ✅ Replace image placeholder if present in the template
       html = html
-         .replace(
-  /{{photo}}/g,
-  aiResume.personal_info?.photo || "")
-        .replace(/{{name}}/g, aiResume.personal_info?.name || "")
-        .replace(/{{email}}/g, aiResume.personal_info?.email || "")
-        .replace(/{{phone}}/g, aiResume.personal_info?.phone || "")
-        .replace(/{{location}}/g, aiResume.personal_info?.location || "")
-        .replace(/{{linkedin}}/g, aiResume.personal_info?.linkedin || "")
-        .replace(/{{github}}/g, aiResume.personal_info?.github || "")
-        .replace(/{{portfolio}}/g, aiResume.personal_info?.portfolio || "")
-        .replace(/{{title}}/g, aiResume.title || "")
+       
         .replace(/{{summary}}/g, aiResume.summary || "")
         .replace(/{{skills}}/g, (aiResume.skills || []).join(", "))
         .replace(
