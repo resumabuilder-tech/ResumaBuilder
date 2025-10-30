@@ -445,7 +445,12 @@ const handlePreview = async () => {
     } else {
       
       html = html
-        .replace(/{{image}}/g, resumeData.image ? `<img src="${resumeData.image}" alt="Profile" style="width:120px;height:120px;border-radius:50%;">` : "")
+         .replace(
+  /{{photo}}/g,
+  resumeData.personal_info?.photo
+    ? `<img src="${resumeData.personal_info.photo}" alt="Profile" style="width:120px;height:120px;border-radius:50%;object-fit:cover;">`
+    : ""
+)
         .replace(/{{name}}/g, resumeData.personal_info?.name || "")
         .replace(/{{email}}/g, resumeData.personal_info?.email || "")
         .replace(/{{phone}}/g, resumeData.personal_info?.phone || "")
