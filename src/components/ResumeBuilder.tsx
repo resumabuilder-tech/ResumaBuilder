@@ -79,7 +79,13 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ onBack }) => {
     template: 'modern',
     technologies: [],
     languages: [],
-    references: []
+    references: [{
+      name: '',
+      designation: '',
+      company: '',
+      contact: ''
+    }]
+
   });
 
   const [newSkill, setNewSkill] = useState('');
@@ -274,9 +280,7 @@ async function buildPreviewFromAI(aiResume: AIResume) {
       html = html
          .replace(
   /{{photo}}/g,
-  resumeData.personal_info?.photo
-    ? `<img src="${resumeData.personal_info.photo}" alt="Profile" style="width:120px;height:120px;border-radius:50%;object-fit:cover;">`
-    : ""
+  resumeData.personal_info?.photo || ""
 )
         .replace(/{{summary}}/g, aiResume.summary || "")
         .replace(/{{skills}}/g, (aiResume.skills || []).join(", "))
@@ -445,12 +449,11 @@ const handlePreview = async () => {
     } else {
       
       html = html
-         .replace(
+       .replace(
   /{{photo}}/g,
-  resumeData.personal_info?.photo
-    ? `<img src="${resumeData.personal_info.photo}" alt="Profile" style="width:120px;height:120px;border-radius:50%;object-fit:cover;">`
-    : ""
+  resumeData.personal_info?.photo || ""
 )
+
         .replace(/{{name}}/g, resumeData.personal_info?.name || "")
         .replace(/{{email}}/g, resumeData.personal_info?.email || "")
         .replace(/{{phone}}/g, resumeData.personal_info?.phone || "")
@@ -461,6 +464,12 @@ const handlePreview = async () => {
         .replace(/{{title}}/g, resumeData.title || "")
         .replace(/{{summary}}/g, resumeData.summary || "")
         .replace(/{{skills}}/g, (resumeData.skills || []).join(", "))
+        .replace(
+      /{{languages}}/g,
+      (resumeData.languages || [])
+        .map(l => `<div class="skill-item">${l}</div>`)
+        .join("") || ""
+    )
         .replace(
           /{{experience}}/g,
           [
@@ -480,11 +489,25 @@ const handlePreview = async () => {
             .join("<br>")
         )
         .replace(
+      /{{references}}/g,
+      (resumeData.references || [])
+        .map(
+          (r) => `
+          <div class="reference-item">
+            <div class="reference-name">${r.name || ""}</div>
+            <div class="reference-position">${r.designation || ""}</div>
+            <div class="reference-contact">${r.contact || ""}</div>
+          </div>`
+        )
+        .join("")
+    )
+        .replace(
           /{{certifications}}/g,
           (resumeData.certifications || [])
             .map((cert) => `${cert.name} - ${cert.issuer} (${cert.year})`)
             .join("<br>")
         );
+        
     }
 
     html = cleanTemplate(html);
