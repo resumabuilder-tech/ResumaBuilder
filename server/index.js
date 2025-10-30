@@ -105,6 +105,7 @@ Important: return ONLY the JSON object (no explanations). Use low temperature fo
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
+        response_format: { "type": "json_object" },
         messages: [
           { role: "system", content: "You are an expert resume writer and ATS optimizer. Output strict JSON only." },
           { role: "user", content: prompt },
