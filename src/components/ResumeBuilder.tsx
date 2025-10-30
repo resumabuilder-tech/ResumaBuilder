@@ -134,6 +134,8 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ onBack }) => {
  // inside ResumeBuilder.tsx
 async function generateAIContent() {
   console.log("📥 [CLIENT] generateAIContent() called");
+  console.log(resumeData.personal_info?.photo);
+
   setIsGenerating(true);
 
   const payload = {
@@ -236,6 +238,17 @@ const handleAIResponse = (aiResume: AIResume) => {
 // ✅ AI Resume Interface
 interface AIResume {
   summary: string;
+  personal_info: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    location?: string;
+    linkedin?: string;
+    github?: string;
+    portfolio?: string;
+    photo?: string;
+  };
+  title: string;
   skills: string[];
   experience: {
     title: string;
@@ -280,8 +293,15 @@ async function buildPreviewFromAI(aiResume: AIResume) {
       html = html
          .replace(
   /{{photo}}/g,
-  resumeData.personal_info?.photo || ""
-)
+  aiResume.personal_info?.photo || "")
+.replace(/{{name}}/g, aiResume.personal_info?.name || "")
+        .replace(/{{email}}/g, aiResume.personal_info?.email || "")
+        .replace(/{{phone}}/g, aiResume.personal_info?.phone || "")
+        .replace(/{{location}}/g, aiResume.personal_info?.location || "")
+        .replace(/{{linkedin}}/g, aiResume.personal_info?.linkedin || "")
+        .replace(/{{github}}/g, aiResume.personal_info?.github || "")
+        .replace(/{{portfolio}}/g, aiResume.personal_info?.portfolio || "")
+        .replace(/{{title}}/g, aiResume.title || "")
         .replace(/{{summary}}/g, aiResume.summary || "")
         .replace(/{{skills}}/g, (aiResume.skills || []).join(", "))
         .replace(
@@ -447,13 +467,10 @@ const handlePreview = async () => {
     if (contentSource) {
       html = html.replace(/{{ai_resume}}/g, contentSource);
     } else {
-      
-      html = html
-       .replace(
-  /{{photo}}/g,
-  resumeData.personal_info?.photo || ""
-)
+      const safePhoto = resumeData.personal_info?.photo?.replace(/[\r\n]+/g, '') || ""
 
+      html = html
+       .replace(/{{photo}}/g, safePhoto)
         .replace(/{{name}}/g, resumeData.personal_info?.name || "")
         .replace(/{{email}}/g, resumeData.personal_info?.email || "")
         .replace(/{{phone}}/g, resumeData.personal_info?.phone || "")
@@ -509,6 +526,7 @@ const handlePreview = async () => {
         );
         
     }
+    
 
     html = cleanTemplate(html);
     setPreviewHTML(html);
