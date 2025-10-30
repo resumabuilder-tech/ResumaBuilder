@@ -463,11 +463,14 @@ const handlePreview = async () => {
 
 
     const contentSource = aiResume && aiResume.trim().length > 0 ? aiResume : null;
+     const safePhoto = (resumeData.personal_info?.photo || "")
+    .replace(/\r?\n|\r/g, "")
+    .replace(/"/g, "&quot;"); // Prevents quotes from breaking HTML
 
     if (contentSource) {
       html = html.replace(/{{ai_resume}}/g, contentSource);
     } else {
-      const safePhoto = resumeData.personal_info?.photo?.replace(/[\r\n]+/g, '') || ""
+     
 
       html = html
        .replace(/{{photo}}/g, safePhoto)
@@ -527,6 +530,8 @@ const handlePreview = async () => {
         
     }
     
+    console.log("Photo data:", safePhoto.slice(0, 100)); // first 100 chars
+    console.log("Final HTML:", html.slice(0, 500));
 
     html = cleanTemplate(html);
     setPreviewHTML(html);
