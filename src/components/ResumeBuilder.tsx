@@ -132,6 +132,24 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ onBack }) => {
       skills: prev.skills?.filter((_, i) => i !== index) || []
     }));
   };
+// merge multiple arrays into unique list, preserve order
+const mergeUniqueMultiple = (...arrays: any[][]) => {
+  const seen = new Set();
+  const out: any[] = [];
+  for (const arr of arrays) {
+    if (!arr) continue;
+    for (const v of arr) {
+      if (v == null) continue;
+      const s = String(v).trim();
+      if (!s) continue;
+      if (!seen.has(s.toLowerCase())) {
+        seen.add(s.toLowerCase());
+        out.push(s);
+      }
+    }
+  }
+  return out;
+};
 
  // inside ResumeBuilder.tsx
 async function generateAIContent() {
@@ -162,7 +180,10 @@ async function generateAIContent() {
       references: resumeData.references || [],
     },
     job_title: resumeData.title || "",
-    target_skills: (resumeData.skills || []).slice(0, 6),
+    target_skills: mergeUniqueMultiple(
+    resumeData.skills || [],
+    resumeData.technologies || []
+  ).slice(0, 8),
     template_url: selectedTemplate?.url || "",
   };
 
@@ -196,6 +217,22 @@ setResumeData(prev => {
   // helper to merge unique strings
   const mergeUnique = (a: any[] = [], b: any[] = []) =>
     Array.from(new Set([...(a || []), ...(b || [])]));
+const mergedSkills = mergeUniqueMultiple(
+    prev.skills || [],
+    resumeDataFromAI.skills || [],
+    prev.technologies || [],
+    resumeDataFromAI.technologies || []
+  );
+
+  const mergedTechnologies = mergeUniqueMultiple(
+    prev.technologies || [],
+    resumeDataFromAI.technologies || []
+  );
+
+  const mergedLanguages = mergeUniqueMultiple(
+    prev.languages || [],
+    resumeDataFromAI.languages || []
+  );
 
   return {
     ...prev,
@@ -215,9 +252,10 @@ setResumeData(prev => {
     },
     title: resumeDataFromAI.title || prev.title || "",
     summary: resumeDataFromAI.summary || prev.summary || "",
-    skills: mergeUnique(prev.skills || [], resumeDataFromAI.skills || []),
-    technologies: mergeUnique(prev.technologies || [], resumeDataFromAI.technologies || []),
-    languages: mergeUnique(prev.languages || [], resumeDataFromAI.languages || []),
+    skills: mergedSkills,
+    // keep technologies as its own field too (in case template has {{technologies}})
+    technologies: mergedTechnologies,
+    languages: mergedLanguages,
     references: resumeDataFromAI.references?.length ? resumeDataFromAI.references : prev.references || [],
     experience: resumeDataFromAI.experience?.length ? resumeDataFromAI.experience : prev.experience || [],
     education: resumeDataFromAI.education?.length ? resumeDataFromAI.education : prev.education || [],
@@ -272,6 +310,7 @@ interface AIResume {
   };
   title: string;
   skills: string[];
+  technologies: string[];
   experience: {
     title: string;
     company: string;
@@ -315,11 +354,21 @@ async function buildPreviewFromAI(aiResume: AIResume) {
 
     // Replace placeholders using aiResume values (but use plain URL for photo)
     if (typeof aiResume === "object") {
+      const combinedSkillsForAI = mergeUniqueMultiple(
+        aiResume.skills || [],
+        aiResume.technologies || [],
+        resumeData.skills || [],
+        resumeData.technologies || []
+      );
       html = html
-        .replace(/{{photo}}/g, photoUrl) // **only the URL** - template contains the <img src="{{photo}}">
+        .replace(/{{photo}}/g, photoUrl)
         .replace(/{{summary}}/g, aiResume.summary || "")
-        .replace(/{{skills}}/g, (aiResume.skills || []).map(s => `<div class="skill-item">${s}</div>`).join(""))
-        .replace(/{{languages}}/g, (aiResume.languages || []).map(l => `<div class="skill-item">${l}</div>`).join(""))
+        // render skills as bullet HTML (use CSS .skill-item)
+        .replace(/{{skills}}/g, combinedSkillsForAI.map(s => `<div class="skill-item">${s}</div>`).join(""))
+        .replace(/{{technologies}}/g, (resumeData.technologies || []).map(t => `<div class="skill-item">${t}</div>`).join(""))
+
+        // languages:
+        .replace(/{{languages}}/g, (aiResume.languages || resumeData.languages || []).map(l => `<div class="skill-item">${l}</div>`).join(""))
         .replace(/{{experience}}/g,
           (aiResume.experience || []).map(e =>
             `<div class="experience-item">
@@ -465,7 +514,7 @@ const handlePreview = async () => {
     const safePhoto = (resumeData.personal_info?.photo || "")
       .replace(/\r?\n|\r/g, "")
       .replace(/"/g, "&quot;");
-
+    const combinedSkillsForPreview = mergeUniqueMultiple(resumeData.skills || [], resumeData.technologies || []);
     html = html
       .replace(/{{photo}}/g, safePhoto)
       .replace(/{{name}}/g, resumeData.personal_info?.name || "")
@@ -477,7 +526,8 @@ const handlePreview = async () => {
       .replace(/{{portfolio}}/g, resumeData.personal_info?.portfolio || "")
       .replace(/{{title}}/g, resumeData.title || "")
       .replace(/{{summary}}/g, resumeData.summary || "")
-      .replace(/{{skills}}/g, (resumeData.skills || []).map(s => `<div class="skill-item">${s}</div>`).join(""))
+      .replace(/{{skills}}/g, combinedSkillsForPreview.map(s => `<div class="skill-item">${s}</div>`).join(""))
+      .replace(/{{technologies}}/g, (resumeData.technologies || []).map(t => `<div class="skill-item">${t}</div>`).join(""))
       .replace(/{{languages}}/g, (resumeData.languages || []).map(l => `<div class="skill-item">${l}</div>`).join(""))
       .replace(/{{experience}}/g,
         (resumeData.experience || []).map(e =>
