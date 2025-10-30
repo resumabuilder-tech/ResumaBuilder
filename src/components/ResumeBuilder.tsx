@@ -44,6 +44,8 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ onBack }) => {
   const [loadingTemplates, setLoadingTemplates] = useState(true);
   const [aiResume, setAiResume] = useState<string | null>(null);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [aiRawText, setAiRawText] = useState<string>("");
+
 
   if (isLoading) {
   return <div>Loading user data...</div>;
@@ -186,30 +188,43 @@ async function generateAIContent() {
     const resumeDataFromAI = data.resume;
 
     // ✅ Include your new fields in the update
-    setResumeData((prev) => ({
-      ...prev,
-      personal_info: {
-    ...prev.personal_info,
-    photo: prev.personal_info?.photo || "", // ✅ Keep existing uploaded photo
-  },  
-      name: resumeDataFromAI.personal_info?.name || "",
-      email: resumeDataFromAI.personal_info?.email || "",
-      phone: resumeDataFromAI.personal_info?.phone || "",
-      location: resumeDataFromAI.personal_info?.location || "",
-      linkedin: resumeDataFromAI.personal_info?.linkedin || "",
-      github: resumeDataFromAI.personal_info?.github || "",
-      portfolio: resumeDataFromAI.personal_info?.portfolio || "",
-      title: resumeDataFromAI.title || "",
-      summary: resumeDataFromAI.summary || "",
-      skills: resumeDataFromAI.skills || [],
-      experience: resumeDataFromAI.experience || [],
-      education: resumeDataFromAI.education || [],
-      projects: resumeDataFromAI.projects || [],
-      certifications: resumeDataFromAI.certifications || [],
-      technologies: resumeDataFromAI.technologies || prev.technologies || [],
-      languages: resumeDataFromAI.languages || prev.languages || [],
-      references: resumeDataFromAI.references || prev.references || [],
-    }));
+    // After you have `const resumeDataFromAI = data.resume;`
+setAiResume(resumeDataFromAI);          // keep AI result
+setAiRawText?.(JSON.stringify(data, null, 2)); // optional debug
+
+setResumeData(prev => {
+  // helper to merge unique strings
+  const mergeUnique = (a: any[] = [], b: any[] = []) =>
+    Array.from(new Set([...(a || []), ...(b || [])]));
+
+  return {
+    ...prev,
+    // preserve uploaded photo in personal_info
+    personal_info: {
+      ...prev.personal_info,
+      // don't overwrite uploaded photo (if present)
+      photo: prev.personal_info?.photo || resumeDataFromAI.photo || "",
+      // allow AI to suggest name/email only if it provides them
+      name: resumeDataFromAI.personal_info?.name || prev.personal_info?.name || "",
+      email: resumeDataFromAI.personal_info?.email || prev.personal_info?.email || "",
+      phone: resumeDataFromAI.personal_info?.phone || prev.personal_info?.phone || "",
+      location: resumeDataFromAI.personal_info?.location || prev.personal_info?.location || "",
+      linkedin: resumeDataFromAI.personal_info?.linkedin || prev.personal_info?.linkedin || "",
+      github: resumeDataFromAI.personal_info?.github || prev.personal_info?.github || "",
+      portfolio: resumeDataFromAI.personal_info?.portfolio || prev.personal_info?.portfolio || ""
+    },
+    title: resumeDataFromAI.title || prev.title || "",
+    summary: resumeDataFromAI.summary || prev.summary || "",
+    skills: mergeUnique(prev.skills || [], resumeDataFromAI.skills || []),
+    technologies: mergeUnique(prev.technologies || [], resumeDataFromAI.technologies || []),
+    languages: mergeUnique(prev.languages || [], resumeDataFromAI.languages || []),
+    references: resumeDataFromAI.references?.length ? resumeDataFromAI.references : prev.references || [],
+    experience: resumeDataFromAI.experience?.length ? resumeDataFromAI.experience : prev.experience || [],
+    education: resumeDataFromAI.education?.length ? resumeDataFromAI.education : prev.education || [],
+    projects: resumeDataFromAI.projects?.length ? resumeDataFromAI.projects : prev.projects || [],
+    certifications: resumeDataFromAI.certifications?.length ? resumeDataFromAI.certifications : prev.certifications || []
+  };
+});
 
     await buildPreviewFromAI(resumeDataFromAI);
 
@@ -268,7 +283,7 @@ interface AIResume {
   languages?: string[];
   references?: {
     name: string;
-    position: string;
+    designation: string;
     company: string;
     contact: string;
   }[];
@@ -291,66 +306,54 @@ async function buildPreviewFromAI(aiResume: AIResume) {
     return;
   }
 
-  try {
+   try {
     const resp = await fetch(selectedTemplate.url);
     let html = await resp.text();
 
+    // Use photo from resumeData (merged) first; fallback to aiResume.photo (if any)
+    const photoUrl = resumeData.personal_info?.photo || (aiResume as any)?.photo || "";
+
+    // Replace placeholders using aiResume values (but use plain URL for photo)
     if (typeof aiResume === "object") {
-      // ✅ Replace image placeholder if present in the template
       html = html
-       
+        .replace(/{{photo}}/g, photoUrl) // **only the URL** - template contains the <img src="{{photo}}">
         .replace(/{{summary}}/g, aiResume.summary || "")
-        .replace(/{{skills}}/g, (aiResume.skills || []).join(", "))
-        .replace(
-      /{{languages}}/g,
-      (aiResume.languages || [])
-        .map(l => `<div class="skill-item">${l}</div>`)
-        .join("") || ""
-    )
-        .replace(
-          /{{experience}}/g,
-          (aiResume.experience || [])
-            .map(
-              (e) =>
-                `<b>${e.title}</b> — ${e.company} (${e.duration})<br>${e.description || ""}`
-            )
-            .join("<br><br>")
+        .replace(/{{skills}}/g, (aiResume.skills || []).map(s => `<div class="skill-item">${s}</div>`).join(""))
+        .replace(/{{languages}}/g, (aiResume.languages || []).map(l => `<div class="skill-item">${l}</div>`).join(""))
+        .replace(/{{experience}}/g,
+          (aiResume.experience || []).map(e =>
+            `<div class="experience-item">
+              <div class="job-title-text"><strong>${e.title || ""}</strong><span class="job-date"> ${e.duration || ""}</span></div>
+              <div class="company-name">${e.company || ""}</div>
+              <div class="job-description">${e.description || ""}</div>
+            </div>`
+          ).join("<br>")
         )
-        .replace(
-          /{{education}}/g,
-          (aiResume.education || [])
-            .map(
-              (ed) =>
-                `${ed.degree} — ${ed.institution} (${ed.year || ""}) ${
-                  ed.gpa ? "| GPA: " + ed.gpa : ""
-                }`
-            )
-            .join("<br>")
+        .replace(/{{education}}/g,
+          (aiResume.education || []).map(ed =>
+            `<div class="education-item">
+              <div class="school-name"><strong>${ed.degree || ""}</strong><span class="edu-date"> ${ed.year || ""}</span></div>
+              <div class="degree-name">${ed.institution || ""}</div>
+              <div class="edu-date">${ed.gpa ? `GPA: ${ed.gpa}` : ""}</div>
+            </div>`
+          ).join("")
         )
-         .replace(
-      /{{references}}/g,
-      (aiResume.references || [])
-        .map(
-          (r) => `
-          <div class="reference-item">
-            <div class="reference-name">${r.name || ""}</div>
-            <div class="reference-position">${r.position || ""}</div>
-            <div class="reference-contact">${r.contact || ""}</div>
-          </div>`
+        .replace(/{{references}}/g,
+          (aiResume.references || []).map(r =>
+            `<div class="reference-item">
+               <div class="reference-name">${r.name || ""}</div>
+               <div class="reference-designation">${r.designation || ""}</div>
+               <div class="reference-contact">${r.contact || ""}</div>
+            </div>`
+          ).join("")
         )
-        .join("")
-    )
-        .replace(
-          /{{projects}}/g,
-          (aiResume.projects || [])
-            .map((p) => (p.title ? `${p.title}: ${p.description}` : p))
-            .join("<br>")
+        .replace(/{{projects}}/g,
+          (aiResume.projects || []).map(p =>
+            `<div class="project-item"><strong>${p.title || ""}</strong><div>${p.description || ""}</div></div>`
+          ).join("")
         )
-        .replace(
-          /{{certifications}}/g,
-          (aiResume.certifications || [])
-            .map((c) => (c.name ? `${c.name} (${c.year})` : c))
-            .join("<br>")
+        .replace(/{{certifications}}/g,
+          (aiResume.certifications || []).map(c => `<div>${c.name || ""}${c.year ? ` (${c.year})` : ""}</div>`).join("")
         );
     } else if (typeof aiResume === "string") {
       html = html.replace(/{{summary}}/g, aiResume);
@@ -458,85 +461,66 @@ const handlePreview = async () => {
     const response = await fetch(selectedTemplate.url);
     let html: string = await response.text();
 
+    // Use merged resumeData for rendering (AI has already been merged into resumeData)
+    const safePhoto = (resumeData.personal_info?.photo || "")
+      .replace(/\r?\n|\r/g, "")
+      .replace(/"/g, "&quot;");
 
-    const contentSource = aiResume && aiResume.trim().length > 0 ? aiResume : null;
-    
-    if (contentSource) {
-      html = html.replace(/{{ai_resume}}/g, contentSource);
-    } else {
-      const safePhoto = (resumeData.personal_info?.photo || "")
-        .replace(/\r?\n|\r/g, "")
-        .replace(/"/g, "&quot;"); // Prevents quotes from breaking HTML
-
-      html = html
-        .replace(/{{photo}}/g, safePhoto)
-        .replace(/{{name}}/g, resumeData.personal_info?.name || "")
-        .replace(/{{email}}/g, resumeData.personal_info?.email || "")
-        .replace(/{{phone}}/g, resumeData.personal_info?.phone || "")
-        .replace(/{{location}}/g, resumeData.personal_info?.location || "")
-        .replace(/{{linkedin}}/g, resumeData.personal_info?.linkedin || "")
-        .replace(/{{github}}/g, resumeData.personal_info?.github || "")
-        .replace(/{{portfolio}}/g, resumeData.personal_info?.portfolio || "")
-        .replace(/{{title}}/g, resumeData.title || "")
-        .replace(/{{summary}}/g, resumeData.summary || "")
-        .replace(/{{skills}}/g, (resumeData.skills || []).join(", "))
-        .replace(
-      /{{languages}}/g,
-      (resumeData.languages || [])
-        .map(l => `<div class="skill-item">${l}</div>`)
-        .join("") || ""
-    )
-        .replace(
-          /{{experience}}/g,
-          [
-            ...(resumeData.experience || []).map(
-              (exp) => `${exp.title} at ${exp.company} (${exp.duration})`
-            ),
-            ...(resumeData.projects || []).map(
-              (proj) => `
-              ${proj.title} — ${proj.description} [${proj.tech}] (${proj.duration})`
-            ),
-          ].join("<br>")
-        )
-        .replace(
-          /{{education}}/g,
-          (resumeData.education || [])
-            .map((edu) => `${edu.degree} - ${edu.institution} (${edu.year})`)
-            .join("<br>")
-        )
-        .replace(
-      /{{references}}/g,
-      (resumeData.references || [])
-        .map(
-          (r) => `
-          <div class="reference-item">
-            <div class="reference-name">${r.name || ""}</div>
-            <div class="reference-position">${r.designation || ""}</div>
-            <div class="reference-contact">${r.contact || ""}</div>
+    html = html
+      .replace(/{{photo}}/g, safePhoto)
+      .replace(/{{name}}/g, resumeData.personal_info?.name || "")
+      .replace(/{{email}}/g, resumeData.personal_info?.email || "")
+      .replace(/{{phone}}/g, resumeData.personal_info?.phone || "")
+      .replace(/{{location}}/g, resumeData.personal_info?.location || "")
+      .replace(/{{linkedin}}/g, resumeData.personal_info?.linkedin || "")
+      .replace(/{{github}}/g, resumeData.personal_info?.github || "")
+      .replace(/{{portfolio}}/g, resumeData.personal_info?.portfolio || "")
+      .replace(/{{title}}/g, resumeData.title || "")
+      .replace(/{{summary}}/g, resumeData.summary || "")
+      .replace(/{{skills}}/g, (resumeData.skills || []).map(s => `<div class="skill-item">${s}</div>`).join(""))
+      .replace(/{{languages}}/g, (resumeData.languages || []).map(l => `<div class="skill-item">${l}</div>`).join(""))
+      .replace(/{{experience}}/g,
+        (resumeData.experience || []).map(e =>
+          `<div class="experience-item">
+            <div class="job-title-text"><strong>${e.title || ""}</strong><span class="job-date"> ${e.duration || ""}</span></div>
+            <div class="company-name">${e.company || ""}</div>
+            <div class="job-description">${e.description || ""}</div>
           </div>`
-        )
-        .join("")
-    )
-        .replace(
-          /{{certifications}}/g,
-          (resumeData.certifications || [])
-            .map((cert) => `${cert.name} - ${cert.issuer} (${cert.year})`)
-            .join("<br>")
-        );
-    console.log("Photo data:", safePhoto.slice(0, 100)); // first 100 chars
-    console.log("Final HTML:", html.slice(0, 500));
-    }
-    
-    
+        ).join("<br>")
+      )
+      .replace(/{{education}}/g,
+        (resumeData.education || []).map(ed =>
+          `<div class="education-item">
+            <div class="school-name"><strong>${ed.degree || ""}</strong><span class="edu-date"> ${ed.year || ""}</span></div>
+            <div class="degree-name">${ed.institution || ""}</div>
+            <div class="edu-date">${ed.gpa ? `GPA: ${ed.gpa}` : ""}</div>
+          </div>`
+        ).join("")
+      )
+      .replace(/{{references}}/g,
+        (resumeData.references || []).map(r =>
+          `<div class="reference-item">
+             <div class="reference-name">${r.name || ""}</div>
+             <div class="reference-position">${r.designation  || ""}</div>
+             <div class="reference-contact">${r.contact || ""}</div>
+          </div>`
+        ).join("")
+      )
+      .replace(/{{projects}}/g, (resumeData.projects || []).map(p => `<div class="project-item"><strong>${p.title || ""}</strong><div>${p.description || ""}</div></div>`).join(""))
+      .replace(/{{certifications}}/g, (resumeData.certifications || []).map(c => `<div>${c.name || ""}${c.year ? ` (${c.year})` : ""}</div>`).join(""));
 
     html = cleanTemplate(html);
     setPreviewHTML(html);
     setPreviewMode(true);
+
+    console.log("Photo data:", safePhoto.slice(0, 100)); // debug
+    console.log("Final HTML fragment:", html.slice(0, 400));
   } catch (error) {
     console.error("Error loading preview:", error);
     alert("Failed to load template preview.");
   }
 };
+
 const [newLanguage, setNewLanguage] = useState('');
 const addLanguage = () => {
   if (!newLanguage.trim()) return;
