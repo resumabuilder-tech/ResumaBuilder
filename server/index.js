@@ -93,7 +93,8 @@ Template URL: ${template_url || ""}
 Job Description (if available):
 ${jobDescription || "(none)"}
 
-Important: return ONLY the JSON object (no explanations). Use low temperature for consistent results.
+Return only a JSON object that matches the schema above exactly. No markdown, no text, no explanation.
+
 `;
 
     // Call OpenAI
@@ -105,13 +106,91 @@ Important: return ONLY the JSON object (no explanations). Use low temperature fo
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        response_format: { "type": "json_object" },
+        response_format: {
+  type: "json_schema",
+  json_schema: {
+    name: "ResumeSchema",
+    schema: {
+      type: "object",
+      properties: {
+        summary: { type: "string" },
+        skills: { type: "array", items: { type: "string" } },
+        technologies: { type: "array", items: { type: "string" } },
+        languages: { type: "array", items: { type: "string" } },
+        references: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              position: { type: "string" },
+              contact: { type: "string" },
+            },
+          },
+        },
+        experience: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              company: { type: "string" },
+              duration: { type: "string" },
+              description: { type: "string" },
+            },
+            required: ["title", "company"],
+          },
+        },
+        education: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              degree: { type: "string" },
+              institution: { type: "string" },
+              year: { type: "string" },
+              gpa: { type: "string" },
+            },
+          },
+        },
+        projects: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              description: { type: "string" },
+              tech: { type: "string" },
+              duration: { type: "string" },
+            },
+          },
+        },
+        certifications: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              issuer: { type: "string" },
+              year: { type: "string" },
+            },
+          },
+        },
+        extracted_keywords: { type: "array", items: { type: "string" } },
+        matched_keywords: { type: "array", items: { type: "string" } },
+      },
+      required: ["summary", "skills", "experience"],
+    },
+  },
+  strict: true,
+},
+
         messages: [
           { role: "system", content: "You are an expert resume writer and ATS optimizer. Output strict JSON only." },
           { role: "user", content: prompt },
         ],
 
-        temperature: 0.15,
+        temperature: 0.0,
         max_tokens: 2000,
       }),
     });
@@ -122,16 +201,13 @@ Important: return ONLY the JSON object (no explanations). Use low temperature fo
     const raw = data.choices?.[0]?.message?.content || "";
 
     // Try to parse; if parsing fails, return fallback with rawText for debugging
-    let parsed = parseAIJson(raw);
-    if (!parsed) {
-      // attempt a second pass by removing any leading/trailing text
-      const attempt = raw.replace(/^[\s\S]*?(\{[\s\S]*\})[\s\S]*?$/, "$1");
-      try {
-        parsed = JSON.parse(attempt);
-      } catch (e) {
-        parsed = null;
-      }
-    }
+    let parsed;
+try {
+  parsed = JSON.parse(raw);
+} catch {
+  parsed = null;
+}
+
 
     if (!parsed) {
       // Fallback: return raw text so frontend can show debug info
