@@ -2,7 +2,8 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
-
+import { Resend } from "resend";
+import { createClient } from "@supabase/supabase-js";
 
 dotenv.config();
 const app = express();
@@ -33,14 +34,72 @@ app.use((req, res, next) => {
   console.log("🌍 Origin received:", req.headers.origin);
   next();
 });
-const parseAIJson = (text) => {
-  const cleaned = text.replace(/^```json\s*/, "").replace(/```$/, "").trim();
+const parseAIJson = (raw) => {
+  const cleaned = raw.replace(/^```json\s*/, "").replace(/```$/, "").trim();
   try {
     return JSON.parse(cleaned);
   } catch (err) {
     return null;
   }
 };
+const resend = new Resend(process.env.RESEND_API_KEY);
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY); 
+
+// ====== SEND OTP ======
+app.post("/send-otp", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: "Email required" });
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+    // Store in Supabase
+    await supabase.from("otps").insert([
+      { email, otp, expires_at: expiresAt, verified: false }
+    ]);
+
+    // Send Email
+    await resend.emails.send({
+      from: "Your App <noreply@yourdomain.com>",
+      to: email,
+      subject: "Your OTP Code",
+      html: `<p>Your OTP code is <b>${otp}</b>. It expires in 10 minutes.</p>`,
+    });
+
+    res.json({ message: "OTP sent successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error sending OTP" });
+  }
+});
+
+// ====== VERIFY OTP ======
+app.post("/verify-otp", async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ error: "Email and OTP required" });
+
+    const { data, error } = await supabase
+      .from("otps")
+      .select("*")
+      .eq("email", email)
+      .eq("otp", otp)
+      .single();
+
+    if (error || !data) return res.status(400).json({ error: "Invalid OTP" });
+
+    const expired = new Date(data.expires_at) < new Date();
+    if (expired) return res.status(400).json({ error: "OTP expired" });
+
+    await supabase.from("otps").update({ verified: true }).eq("id", data.id);
+    res.json({ message: "OTP verified successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error verifying OTP" });
+  }
+});
+
 app.post("/api/generate/resume", async (req, res) => {
   try {
     const { profile = {}, job_title, target_skills = [], template_url, jobDescription } = req.body;
@@ -99,6 +158,7 @@ Return only a JSON object that matches the schema above exactly. No markdown, no
 
     // Call OpenAI
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -198,7 +258,9 @@ Return only a JSON object that matches the schema above exactly. No markdown, no
  console.log("🧾 Prompt size:", prompt.length, "characters");
 
     const data = await response.json();
+    
     const raw = data.choices?.[0]?.message?.content || "";
+    console.log("AI raw output:", raw);
 
     // Try to parse; if parsing fails, return fallback with rawText for debugging
     let parsed;
@@ -279,8 +341,7 @@ app.post("/api/generate/cover-letter", async (req, res) => {
     res.status(500).json({ error: "Failed to generate cover letter" });
   }
 });
-
-
+ 
 
 
 
@@ -356,6 +417,7 @@ ${jobDescription}
     res.status(500).json({ error: "Failed to analyze resume" });
   }
 });
+
 
 // ✅ Export app instead of listening (Vercel requirement)
 export default app;
