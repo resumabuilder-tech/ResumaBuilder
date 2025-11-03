@@ -70,16 +70,16 @@ const handleVerifyOtp = async (e: React.FormEvent) => {
   setMessage(null);
   setError(null);
   setIsVerifying(true);
-
+  console.log("VERIFY-OTP request body:", { email: signupData.email, otp });
   try {
     const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/verify-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: signupData.email, otp }),
     });
-
+    console.log("verify-otp response status:", response.status);
     const data = await response.json();
-
+    console.log("verify-otp response data:", data);
     if (response.ok && data.success) {
       // Proceed with signup after successful verification
       const result = await signup(signupData.name, signupData.email, signupData.password);
