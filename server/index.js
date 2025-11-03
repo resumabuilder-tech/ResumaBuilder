@@ -46,7 +46,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY); 
 
 // ====== SEND OTP ======
-app.post("/api/send-otp", async (req, res) => {
+app.post("/send-otp", async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: "Email required" });
@@ -75,7 +75,7 @@ app.post("/api/send-otp", async (req, res) => {
 });
 
 // ====== VERIFY OTP ======
-app.post("/api/verify-otp", async (req, res) => {
+app.post("/verify-otp", async (req, res) => {
   try {
     const { email, otp } = req.body;
     if (!email || !otp) return res.status(400).json({ error: "Email and OTP required" });
