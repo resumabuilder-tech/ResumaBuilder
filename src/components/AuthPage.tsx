@@ -14,6 +14,10 @@ export const AuthPage: React.FC = () => {
   const [signupData, setSignupData] = useState({ name: '', email: '', password: '' });
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+
 
   // Login handler
   const handleLogin = async (e: React.FormEvent) => {
@@ -36,20 +40,66 @@ export const AuthPage: React.FC = () => {
 
   // Signup handler
   const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMessage(null);
-    setError(null);
+  e.preventDefault();
+  setMessage(null);
+  setError(null);
 
-    const result = await signup(signupData.name, signupData.email, signupData.password);
+  try {
+    // Step 1: Request OTP from backend
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/send-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: signupData.email }),
+    });
 
-    if (result.success) {
-      setMessage('✅ Activation email sent! Please check your inbox.');
-    } else if (result.message?.includes('User already registered')) {
-      setError('⚠️ This email is already registered. Please login.');
+    const data = await response.json();
+
+    if (response.ok) {
+      setOtpSent(true);
+      setMessage('✅ OTP sent to your email. Please enter it to verify.');
     } else {
-      setError(result.message || '❌ Signup failed. Please try again later.');
+      setError(data.message || '❌ Failed to send OTP.');
     }
-  };
+  } catch (err) {
+    console.error(err);
+    setError('❌ Network error while sending OTP.');
+  }
+};
+const handleVerifyOtp = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setMessage(null);
+  setError(null);
+  setIsVerifying(true);
+
+  try {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: signupData.email, otp }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      // Proceed with signup after successful verification
+      const result = await signup(signupData.name, signupData.email, signupData.password);
+      if (result.success) {
+        setMessage('✅ Account created successfully!');
+        setOtpSent(false);
+      } else {
+        setError(result.message || '❌ Signup failed after verification.');
+      }
+    } else {
+      setError(data.message || '❌ Invalid OTP.');
+    }
+  } catch (err) {
+    console.error(err);
+    setError('❌ Network error while verifying OTP.');
+  } finally {
+    setIsVerifying(false);
+  }
+};
+
 
   // Google login handler
   const loginWithGoogle = async () => {
@@ -187,7 +237,7 @@ export const AuthPage: React.FC = () => {
 
                 {/* SIGNUP TAB */}
                 <TabsContent value="signup" className="space-y-4">
-                  <form onSubmit={handleSignup} className="space-y-4">
+                  <form onSubmit={otpSent ? handleVerifyOtp : handleSignup} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="signup-name">Full Name</Label>
                       <Input
@@ -231,10 +281,30 @@ export const AuthPage: React.FC = () => {
                     {/* ✅ Messages for signup */}
                     {message && <p className="text-green-600 text-sm font-medium">{message}</p>}
                     {error && <p className="text-red-600 text-sm font-medium">{error}</p>}
+{otpSent && (
+  <div className="space-y-2">
+    <Label htmlFor="otp">Enter OTP</Label>
+    <Input
+      id="otp"
+      type="text"
+      placeholder="Enter the 6-digit code"
+      value={otp}
+      onChange={(e) => setOtp(e.target.value)}
+      required
+    />
+  </div>
+)}
 
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? 'Creating Account...' : 'Create Account'}
-                    </Button>
+                    <Button type="submit" className="w-full" disabled={isLoading || isVerifying}>
+  {isLoading || isVerifying
+    ? otpSent
+      ? 'Verifying...'
+      : 'Sending OTP...'
+    : otpSent
+      ? 'Verify OTP'
+      : 'Send OTP'}
+</Button>
+
                   </form>
                 </TabsContent>
               </Tabs>
