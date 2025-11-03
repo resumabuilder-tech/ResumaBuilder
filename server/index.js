@@ -349,8 +349,7 @@ app.post("/api/generate/cover-letter", async (req, res) => {
 // Basic root for browser check
 app.get("/", (_req, res) => res.send("Resume API — POST /api/generate/resume"));
 
-const port = process.env.PORT || 5000;
-app.listen(port, () => console.log(`✅ Server running on port ${port}`));
+
 
 app.post("/api/analyze/ats", async (req, res) => {
   try {
@@ -417,6 +416,10 @@ ${jobDescription}
     res.status(500).json({ error: "Failed to analyze resume" });
   }
 });
+if (process.env.NODE_ENV !== "production") {
+  const port = process.env.PORT || 5000;
+  app.listen(port, () => console.log(`✅ Server running on port ${port}`));
+}
 
 
 // ✅ Export app instead of listening (Vercel requirement)
