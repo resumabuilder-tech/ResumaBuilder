@@ -61,7 +61,7 @@ app.post("/api/send-otp", async (req, res) => {
 
     // Send Email
     await resend.emails.send({
-      from: "Your App <noreply@yourdomain.com>",
+      from: "Resuma Builder <noreply@resumabuilder.com>",
       to: email,
       subject: "Your OTP Code",
       html: `<p>Your OTP code is <b>${otp}</b>. It expires in 10 minutes.</p>`,
