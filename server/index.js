@@ -77,7 +77,7 @@ app.post("/api/send-otp", async (req, res) => {
 // ====== VERIFY OTP ======
 app.post("/api/verify-otp", async (req, res) => {
   try {
-    const { email, otp } = req.body;
+    const { email, otp , password , name } = req.body;
     if (!email || !otp) return res.status(400).json({ error: "Email and OTP required" });
 
     // 1. Verify OTP
@@ -112,7 +112,9 @@ app.post("/api/verify-otp", async (req, res) => {
       const { data: createdUser, error: createErr } =
         await adminClient.auth.admin.createUser({
           email,
+          password,  // pass same password user entered
           email_confirm: true,
+          user_metadata: { name },
         });
       if (createErr) throw createErr;
       authUserId = createdUser.user.id;

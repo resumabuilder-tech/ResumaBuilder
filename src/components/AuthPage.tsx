@@ -75,7 +75,12 @@ const handleVerifyOtp = async (e: React.FormEvent) => {
     const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/verify-otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: signupData.email, otp }),
+      body: JSON.stringify({
+  email: signupData.email,
+  otp,
+   password: signupData.password,
+  name: signupData.name,
+}),
     });
     console.log("verify-otp response status:", response.status);
     const data = await response.json();
