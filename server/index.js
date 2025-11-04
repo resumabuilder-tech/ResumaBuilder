@@ -93,7 +93,7 @@ app.post("/api/verify-otp", async (req, res) => {
     if (expired) return res.status(400).json({ error: "OTP expired" });
 
     await supabase.from("otps").update({ verified: true }).eq("id", data.id);
-    res.json({ message: "OTP verified successfully" });
+    res.json({ message: "OTP verified successfully, now login into your account using your credentials" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error verifying OTP" });
