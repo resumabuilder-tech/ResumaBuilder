@@ -125,7 +125,7 @@ app.post("/api/verify-otp", async (req, res) => {
         id: user ? user.id : crypto.randomUUID(), // generate UUID if user missing
         full_name: "",
         plan: "free",
-        created_at: new Date().toISOString(),
+        created_date: new Date().toISOString(),
       };
 
       const { error: insertError } = await supabase
