@@ -123,7 +123,7 @@ app.post("/api/verify-otp", async (req, res) => {
       .from("profiles")
       .select("id")
       .eq("id", authUserId)
-      .single();
+       .maybeSingle();
 
     if (!profileExists) {
       const { error: insertError } = await supabase
