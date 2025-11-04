@@ -128,11 +128,12 @@ app.post("/api/verify-otp", async (req, res) => {
        .maybeSingle();
 
     if (!profileExists) {
-      const { error: insertError } = await supabase
-        .from("profiles")
-        .insert([{ id: authUserId, email }]);
-      if (insertError) throw insertError;
-    }
+  const { error: insertError } = await supabase
+    .from("profiles")
+    .insert([{ id: authUserId, email, username: name }]);
+  if (insertError) throw insertError;
+}
+
 
     res.json({ message: "OTP verified successfully" });
   } catch (err) {
