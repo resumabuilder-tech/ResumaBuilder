@@ -93,11 +93,30 @@ app.post("/api/verify-otp", async (req, res) => {
     if (expired) return res.status(400).json({ error: "OTP expired" });
 
     await supabase.from("otps").update({ verified: true }).eq("id", data.id);
+        // Check if profile already exists
+    const { data: existingUser } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("email", email)
+      .single();
+
+    if (!existingUser) {
+      // Create profile if it doesn't exist
+      const { error: insertError } = await supabase
+        .from("profiles")
+        .insert([{ email }]);
+
+      if (insertError) {
+        console.error("Profile insert error:", insertError);
+        return res.status(500).json({ error: "Failed to create user profile" });
+      }
+    }
     res.json({ message: "OTP verified successfully, now login into your account using your credentials" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error verifying OTP" });
   }
+
 });
 
 app.post("/api/generate/resume", async (req, res) => {
