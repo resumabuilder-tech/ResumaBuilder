@@ -101,16 +101,16 @@ app.post("/api/verify-otp", async (req, res) => {
       .single();
 
     if (!existingUser) {
-      // Create profile if it doesn't exist
-      const { error: insertError } = await supabase
-        .from("profiles")
-        .insert([{ email }]);
+  const { error: insertError } = await supabase
+    .from("profiles")
+    .insert([{ email }]);
 
-      if (insertError) {
-        console.error("Profile insert error:", insertError);
-        return res.status(500).json({ error: "Failed to create user profile" });
-      }
-    }
+  if (insertError) {
+    console.error("Profile insert error details:", insertError);
+    return res.status(500).json({ error: insertError.message });
+  }
+}
+
     res.json({ message: "OTP verified successfully, now login into your account using your credentials" });
   } catch (err) {
     console.error(err);
