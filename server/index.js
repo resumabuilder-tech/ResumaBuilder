@@ -97,7 +97,7 @@ app.post("/api/verify-otp", async (req, res) => {
     // 2. Ensure Auth user exists
     const adminClient = createClient(
       process.env.SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
+      process.env.SUPABASE_KEY
     );
 
     // Check if user already exists
