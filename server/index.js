@@ -94,21 +94,24 @@ app.post("/api/verify-otp", async (req, res) => {
 
     await supabase.from("otps").update({ verified: true }).eq("id", data.id);
         // Check if profile already exists
-    const { data: existingUser } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("email", email)
-      .single();
+if (!existingUser) {
+  // Get auth user by email
+  const { data: userData, error: userError } = await supabase
+    .from("auth.users")
+    .select("id")
+    .eq("email", email)
+    .single();
 
-    if (!existingUser) {
+  if (userError || !userData) {
+    console.error("User not found in auth.users:", userError);
+    return res.status(400).json({ error: "User not registered in authentication system" });
+  }
+
+  // Create profile with same auth user id
   const { error: insertError } = await supabase
     .from("profiles")
-    .insert([{ email }]);
+    .insert([{ id: userData.id, email }]);
 
-  if (insertError) {
-    console.error("Profile insert error details:", insertError);
-    return res.status(500).json({ error: insertError.message });
-  }
 }
 
     res.json({ message: "OTP verified successfully, now login into your account using your credentials" });
