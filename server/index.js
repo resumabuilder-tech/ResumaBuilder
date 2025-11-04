@@ -78,9 +78,10 @@ app.post("/api/send-otp", async (req, res) => {
 app.post("/api/verify-otp", async (req, res) => {
   try {
     const { email, otp } = req.body;
-    if (!email || !otp) return res.status(400).json({ error: "Email and OTP required" });
+    if (!email || !otp)
+      return res.status(400).json({ error: "Email and OTP required" });
 
-    // Step 1: check OTP
+    // Step 1: Verify OTP
     const { data, error } = await supabase
       .from("otps")
       .select("*")
@@ -89,43 +90,53 @@ app.post("/api/verify-otp", async (req, res) => {
       .single();
 
     if (error || !data) return res.status(400).json({ error: "Invalid OTP" });
+
     const expired = new Date(data.expires_at) < new Date();
     if (expired) return res.status(400).json({ error: "OTP expired" });
 
     await supabase.from("otps").update({ verified: true }).eq("id", data.id);
 
-    // Step 2: get auth user (use admin API)
+    // Step 2: Try fetching existing Supabase Auth user
     const adminClient = createClient(
       process.env.SUPABASE_URL,
       process.env.SUPABASE_KEY
     );
 
-    const { data: userList, error: userListError } = await adminClient.auth.admin.listUsers();
+    const { data: userList, error: userListError } =
+      await adminClient.auth.admin.listUsers();
     if (userListError) {
       console.error("Admin listUsers error:", userListError);
       return res.status(500).json({ error: "Failed to query users" });
     }
 
-    const user = userList.users.find(u => u.email === email);
-    if (!user) {
-      console.log("No user found for", email);
-      return res.status(400).json({ error: "User not registered" });
-    }
+    const user = userList.users.find((u) => u.email === email);
 
-    // Step 3: check profile existence
-    const { data: existingUser } = await supabase
+    // Step 3: Check if profile exists
+    const { data: existingProfile } = await supabase
       .from("profiles")
       .select("id")
       .eq("email", email)
       .single();
 
-    if (!existingUser) {
+    // Step 4: Create profile if not exists
+    if (!existingProfile) {
+      const profilePayload = {
+        email,
+        id: user ? user.id : crypto.randomUUID(), // generate UUID if user missing
+        full_name: "",
+        plan: "free",
+        created_at: new Date().toISOString(),
+      };
+
       const { error: insertError } = await supabase
         .from("profiles")
-        .insert([{ id: user.id, email }]);
+        .insert([profilePayload]);
+
       if (insertError) {
         console.error("Profile insert error:", insertError);
-        return res.status(500).json({ error: "Failed to create user profile" });
+        return res
+          .status(500)
+          .json({ error: "Failed to create user profile" });
       }
     }
 
@@ -135,6 +146,7 @@ app.post("/api/verify-otp", async (req, res) => {
     res.status(500).json({ error: "Error verifying OTP" });
   }
 });
+
 
 
 app.post("/api/generate/resume", async (req, res) => {
