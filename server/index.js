@@ -210,94 +210,17 @@ Return only a JSON object that matches the schema above exactly. No markdown, no
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
-        response_format: {
-  type: "json_schema",
-  json_schema: {
-    name: "ResumeSchema",
-    schema: {
-      type: "object",
-      properties: {
-        summary: { type: "string" },
-        skills: { type: "array", items: { type: "string" } },
-        technologies: { type: "array", items: { type: "string" } },
-        languages: { type: "array", items: { type: "string" } },
-        references: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              name: { type: "string" },
-              position: { type: "string" },
-              contact: { type: "string" },
-            },
-          },
-        },
-        experience: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              title: { type: "string" },
-              company: { type: "string" },
-              duration: { type: "string" },
-              description: { type: "string" },
-            },
-            required: ["title", "company"],
-          },
-        },
-        education: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              degree: { type: "string" },
-              institution: { type: "string" },
-              year: { type: "string" },
-              gpa: { type: "string" },
-            },
-          },
-        },
-        projects: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              title: { type: "string" },
-              description: { type: "string" },
-              tech: { type: "string" },
-              duration: { type: "string" },
-            },
-          },
-        },
-        certifications: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              name: { type: "string" },
-              issuer: { type: "string" },
-              year: { type: "string" },
-            },
-          },
-        },
-        extracted_keywords: { type: "array", items: { type: "string" } },
-        matched_keywords: { type: "array", items: { type: "string" } },
-      },
-      required: ["summary", "skills", "experience"],
+  model: "gpt-4o-mini",
+  messages: [
+    {
+      role: "system",
+      content: "You are an expert resume writer and ATS optimizer. Output valid JSON only. No markdown, no explanation."
     },
-  },
-  strict: true,
-},
-
-        messages: [
-          { role: "system", content: "You are an expert resume writer and ATS optimizer. Output strict JSON only." },
-          { role: "user", content: prompt },
-        ],
-
-        temperature: 0.0,
-        max_tokens: 2000,
-      }),
+    { role: "user", content: prompt },
+  ],
+  temperature: 0.2,
+  max_tokens: 2000,
+})
     });
  console.log("🔐 Using OpenAI Key:", process.env.OPENAI_API_KEY ? "✅ Loaded" : "❌ Missing");
  console.log("🧾 Prompt size:", prompt.length, "characters");
