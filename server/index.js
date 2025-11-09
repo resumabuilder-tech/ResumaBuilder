@@ -182,12 +182,19 @@ Output JSON schema (must follow exactly — additional optional fields allowed):
   "languages": [string],             // optional
   "references": [ { "name":"", "position":"", "contact":"" } ], // optional
   "experience": [
-    { "title":"", "company":"", "duration":"", "description":"" }
+    { "title":"", "company":"", "duration":"", description: {
+  type: "array",
+  items: { type: "string" }
+}
+ }
   ],
   "education": [
     { "degree":"", "institution":"", "year":"", "gpa":"" }
   ],
-  "projects": [ { "title":"", "description":"", "tech": "", "duration": "" } ],
+  "projects": [ { "title":"", description: {
+  type: "array",
+  items: { type: "string" }
+}, "tech": "", "duration": "" } ],
   "certifications": [ { "name":"", "issuer":"", "year":"" } ],
   "extracted_keywords": [string],     // keywords pulled from job description & profile
   "matched_keywords": [string]        // keywords present in the resume (for quick ATS insight)
