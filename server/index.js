@@ -282,12 +282,27 @@ const normalized = {
   languages: safeArray(parsed.languages),
   references: safeArray(parsed.references),
 
-  experience: safeArray(parsed.experience).map(e => ({
-    title: safeString(e.title),
-    company: safeString(e.company),
-    duration: safeString(e.duration),
-    description: safeDesc(e.description)
-  })),
+  experience: Array.isArray(parsed.experience)
+  ? parsed.experience.map(e => ({
+      ...e,
+      description: Array.isArray(e.description) 
+        ? e.description.length > 0 
+          ? e.description 
+          : ["No description provided"] // fallback if empty
+        : [e.description].filter(Boolean)
+    }))
+  : [],
+projects: Array.isArray(parsed.projects)
+  ? parsed.projects.map(p => ({
+      ...p,
+      description: Array.isArray(p.description) 
+        ? p.description.length > 0 
+          ? p.description 
+          : ["No description provided"] // fallback
+        : [p.description].filter(Boolean)
+    }))
+  : [],
+
 
   education: safeArray(parsed.education).map(ed => ({
     degree: safeString(ed.degree),
@@ -296,13 +311,7 @@ const normalized = {
     gpa: safeString(ed.gpa)
   })),
 
-  projects: safeArray(parsed.projects).map(p => ({
-    title: safeString(p.title),
-    tech: safeString(p.tech),
-    duration: safeString(p.duration),
-    description: safeDesc(p.description)
-  })),
-
+ 
   certifications: safeArray(parsed.certifications),
 
   extracted_keywords: safeArray(parsed.extracted_keywords),
