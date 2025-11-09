@@ -374,7 +374,14 @@ async function buildPreviewFromAI(aiResume: AIResume) {
             `<div class="experience-item">
               <div class="job-title-text"><strong>${e.title || ""}</strong><span class="job-date"> ${e.duration || ""}</span></div>
               <div class="company-name">${e.company || ""}</div>
-              <div class="job-description">${e.description || ""}</div>
+             <div class="job-description">
+  ${
+    Array.isArray(e.description)
+      ? e.description.map(d => `<li>${d}</li>`).join("")
+      : e.description || ""
+  }
+</div>
+
             </div>`
           ).join("<br>")
         )
@@ -398,7 +405,15 @@ async function buildPreviewFromAI(aiResume: AIResume) {
         )
         .replace(/{{projects}}/g,
           (aiResume.projects || []).map(p =>
-            `<div class="project-item"><strong>${p.title || ""}</strong><div>${p.description || ""}</div></div>`
+            `<div class="project-item"><strong>${p.title || ""}</strong><div>
+  ${
+    Array.isArray(p.description)
+      ? p.description.map((d: string) => `<li>${d}</li>`).join("")
+      : p.description || ""
+  }
+</div>
+
+</div>`
           ).join("")
         )
         .replace(/{{certifications}}/g,
@@ -534,7 +549,14 @@ const handlePreview = async () => {
           `<div class="experience-item">
             <div class="job-title-text"><strong>${e.title || ""}</strong><span class="job-date"> ${e.duration || ""}</span></div>
             <div class="company-name">${e.company || ""}</div>
-            <div class="job-description">${e.description || ""}</div>
+            <div class="job-description">
+  ${
+    Array.isArray(e.description)
+      ? e.description.map(d => `<li>${d}</li>`).join("")
+      : e.description || ""
+  }
+</div>
+
           </div>`
         ).join("<br>")
       )
@@ -556,7 +578,14 @@ const handlePreview = async () => {
           </div>`
         ).join("")
       )
-      .replace(/{{projects}}/g, (resumeData.projects || []).map(p => `<div class="project-item"><strong>${p.title || ""}</strong><div>${p.description || ""}</div></div>`).join(""))
+      .replace(/{{projects}}/g, (resumeData.projects || []).map(p => `<div class="project-item"><strong>${p.title || ""}</strong><div>
+  ${
+    Array.isArray(p.description)
+      ? p.description.map(d => `<li>${d}</li>`).join("")
+      : p.description || ""
+  }
+</div>
+</div>`).join(""))
       .replace(/{{certifications}}/g, (resumeData.certifications || []).map(c => `<div>${c.name || ""}${c.year ? ` (${c.year})` : ""}</div>`).join(""));
 
     html = cleanTemplate(html);
