@@ -377,7 +377,7 @@ async function buildPreviewFromAI(aiResume: AIResume) {
              <div class="job-description">
   ${
     Array.isArray(e.description)
-    ? e.description.map((d: string, i: number) => `<div key={i}>${d}</div>`).join("")
+    ? e.description.map((d, i) => `<div>${d}</div>`).join("")
     : `<div>${e.description || "No description provided"}</div>`
   }
 </div>
@@ -403,19 +403,14 @@ async function buildPreviewFromAI(aiResume: AIResume) {
             </div>`
           ).join("")
         )
-        .replace(/{{projects}}/g,
-          (aiResume.projects || []).map(p =>
-            `<div class="project-item"><strong>${p.title || ""}</strong><div>
+        .replace(/{{projects}}/g, (resumeData.projects || []).map(p => `<div class="project-item"><strong>${p.title || ""}</strong><div>
   ${
     Array.isArray(p.description)
-    ? p.description.map((d: string, i: number) => `<div key={i}>${d}</div>`).join("")
+    ? p.description.map((d, i) => `<div>${d}</div>`).join("")
     : `<div>${p.description || "No description provided"}</div>`
   }
 </div>
-
-</div>`
-          ).join("")
-        )
+</div>`).join(""))
         .replace(/{{certifications}}/g,
           (aiResume.certifications || []).map(c => `<div>${c.name || ""}${c.year ? ` (${c.year})` : ""}</div>`).join("")
         );
@@ -552,7 +547,7 @@ const handlePreview = async () => {
             <div class="job-description">
   ${
     Array.isArray(e.description)
-    ? e.description.map((d: string, i: number) => `<div key={i}>${d}</div>`).join("")
+    ? e.description.map((d, i) => `<div>${d}</div>`).join("")
     : `<div>${e.description || "No description provided"}</div>`
   }
 </div>
@@ -581,7 +576,7 @@ const handlePreview = async () => {
       .replace(/{{projects}}/g, (resumeData.projects || []).map(p => `<div class="project-item"><strong>${p.title || ""}</strong><div>
   ${
     Array.isArray(p.description)
-    ? p.description.map((d: string, i: number) => `<div key={i}>${d}</div>`).join("")
+    ? p.description.map((d, i) => `<div>${d}</div>`).join("")
     : `<div>${p.description || "No description provided"}</div>`
   }
 </div>
