@@ -260,34 +260,57 @@ try {
       });
     }
         // Ensure all expected keys exist (normalize)
-    const normalized = {
-      summary: parsed.summary || "",
-      skills: parsed.skills || [],
-      technologies: Array.isArray(parsed.technologies) ? parsed.technologies : (Array.isArray(parsed.tech) ? parsed.tech : []),
-      languages: Array.isArray(parsed.languages) ? parsed.languages : [],
-      references: Array.isArray(parsed.references) ? parsed.references : [],
-      experience: Array.isArray(parsed.experience) ? parsed.experience : [],
-      education: Array.isArray(parsed.education) ? parsed.education : [],
-      projects: Array.isArray(parsed.projects) ? parsed.projects : [],
-      certifications: Array.isArray(parsed.certifications) ? parsed.certifications : [],
-      extracted_keywords: parsed.extracted_keywords || [],
-      matched_keywords: parsed.matched_keywords || [],
-      experience: Array.isArray(parsed.experience)
-  ? parsed.experience.map(e => ({
-      ...e,
-      description: Array.isArray(e.description) ? e.description : [e.description].filter(Boolean)
-    }))
-  : [],
-projects: Array.isArray(parsed.projects)
-  ? parsed.projects.map(p => ({
-      ...p,
-      description: Array.isArray(p.description) ? p.description : [p.description].filter(Boolean)
-    }))
-  : [],
+function safeArray(v) {
+  return Array.isArray(v) ? v : [];
+}
 
-      // keep any raw fields for debugging
-      __raw_ai: parsed,
-    };
+function safeString(v) {
+  return typeof v === "string" ? v : "";
+}
+
+function safeDesc(v) {
+  if (Array.isArray(v)) return v;
+  if (typeof v === "string") return [v];
+  return [];
+}
+
+const normalized = {
+  summary: safeString(parsed.summary),
+
+  skills: safeArray(parsed.skills),
+  technologies: safeArray(parsed.technologies || parsed.tech),
+  languages: safeArray(parsed.languages),
+  references: safeArray(parsed.references),
+
+  experience: safeArray(parsed.experience).map(e => ({
+    title: safeString(e.title),
+    company: safeString(e.company),
+    duration: safeString(e.duration),
+    description: safeDesc(e.description)
+  })),
+
+  education: safeArray(parsed.education).map(ed => ({
+    degree: safeString(ed.degree),
+    institution: safeString(ed.institution),
+    year: safeString(ed.year),
+    gpa: safeString(ed.gpa)
+  })),
+
+  projects: safeArray(parsed.projects).map(p => ({
+    title: safeString(p.title),
+    tech: safeString(p.tech),
+    duration: safeString(p.duration),
+    description: safeDesc(p.description)
+  })),
+
+  certifications: safeArray(parsed.certifications),
+
+  extracted_keywords: safeArray(parsed.extracted_keywords),
+  matched_keywords: safeArray(parsed.matched_keywords),
+
+  __raw_ai: parsed
+};
+
 
     return res.json({ success: true, resume: normalized });
   } catch (err) {
