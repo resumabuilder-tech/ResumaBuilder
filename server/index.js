@@ -168,6 +168,11 @@ Requirements:
 3) Ensure language clarity for ATS systems (avoid pronouns, passive voice).
 4) Optimize for recruiter scanning — clear section names, bullet lists, and consistent formatting.
 
+Write a professional resume with:
+• A 4–5 line “About Me / Profile Summary” that is concise and achievement-driven.
+• For each work experience, produce exactly 3–4 bullet points.
+• Bullet points must be measurable, action-oriented, and ATS-friendly.
+• Keep language simple, direct, and keyword-rich.
 
 Output JSON schema (must follow exactly — additional optional fields allowed):
 {
