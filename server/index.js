@@ -263,15 +263,28 @@ try {
     const normalized = {
       summary: parsed.summary || "",
       skills: parsed.skills || [],
-      technologies: parsed.technologies || parsed.tech || [],
-      languages: parsed.languages || [],
-      references: parsed.references || [],
-      experience: parsed.experience || [],
-      education: parsed.education || [],
-      projects: parsed.projects || [],
-      certifications: parsed.certifications || [],
+      technologies: Array.isArray(parsed.technologies) ? parsed.technologies : (Array.isArray(parsed.tech) ? parsed.tech : []),
+      languages: Array.isArray(parsed.languages) ? parsed.languages : [],
+      references: Array.isArray(parsed.references) ? parsed.references : [],
+      experience: Array.isArray(parsed.experience) ? parsed.experience : [],
+      education: Array.isArray(parsed.education) ? parsed.education : [],
+      projects: Array.isArray(parsed.projects) ? parsed.projects : [],
+      certifications: Array.isArray(parsed.certifications) ? parsed.certifications : [],
       extracted_keywords: parsed.extracted_keywords || [],
       matched_keywords: parsed.matched_keywords || [],
+      experience: Array.isArray(parsed.experience)
+  ? parsed.experience.map(e => ({
+      ...e,
+      description: Array.isArray(e.description) ? e.description : [e.description].filter(Boolean)
+    }))
+  : [],
+projects: Array.isArray(parsed.projects)
+  ? parsed.projects.map(p => ({
+      ...p,
+      description: Array.isArray(p.description) ? p.description : [p.description].filter(Boolean)
+    }))
+  : [],
+
       // keep any raw fields for debugging
       __raw_ai: parsed,
     };
