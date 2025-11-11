@@ -20,6 +20,12 @@ import html2pdf from "html2pdf.js";
 interface ResumeBuilderProps {
   onBack: () => void;
 }
+interface Experience {
+  title: string;
+  company: string;
+  duration: string;
+  description: string[];
+}
 // Add this above your component if TS types mismatch
 declare module "html2pdf.js" {
   interface Html2PdfOptions {
@@ -43,8 +49,11 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ onBack }) => {
   const [availableTemplates, setAvailableTemplates] = useState<ResumeTemplate[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(true);
   const [aiResume, setAiResume] = useState<string | null>(null);
+
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [aiRawText, setAiRawText] = useState<string>("");
+  const [editMode, setEditMode] = useState(false);
+  const [editableResume, setEditableResume] = useState<any>(aiResume);
 
 
   if (isLoading) {
@@ -64,8 +73,10 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ onBack }) => {
 
 
 
+
   const [resumeData, setResumeData] = useState<Partial<Resume>>({
     title: 'My Resume',
+    summary: "Your professional summary here", // <-- add summary
     personal_info: {
       name: '',
       email: '',
@@ -87,7 +98,6 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ onBack }) => {
       company: '',
       contact: ''
     }]
-
   });
 
   const [newSkill, setNewSkill] = useState('');
@@ -210,8 +220,21 @@ async function generateAIContent() {
 
     // ✅ Include your new fields in the update
     // After you have `const resumeDataFromAI = data.resume;`
-setAiResume(resumeDataFromAI);          // keep AI result
+setAiResume(resumeDataFromAI); // AI result
 setAiRawText?.(JSON.stringify(data, null, 2)); // optional debug
+
+// Ensure editableResume has summary too
+setEditableResume({
+  ...resumeDataFromAI,
+  summary: resumeDataFromAI.summary || "Your professional summary here"
+});
+
+useEffect(() => {
+  setEditableResume({
+    ...resumeDataFromAI,
+    summary: resumeDataFromAI.summary || "Your professional summary here"
+  });
+}, [resumeDataFromAI]);
 
 setResumeData(prev => {
   // helper to merge unique strings
@@ -275,6 +298,29 @@ const mergedSkills = mergeUniqueMultiple(
     console.log("🟢 [CLIENT] generateAIContent finished");
   }
 }
+interface EditableProps {
+  value: string;
+  onChange: (newValue: string) => void;
+  multiline?: boolean;
+}
+
+const Editable: React.FC<EditableProps> = ({ value, onChange, multiline = false }) => {
+  return multiline ? (
+    <textarea
+      className="border p-1 w-full text-sm"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  ) : (
+    <input
+      className="border p-1 w-full text-sm"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  );
+};
+
+
 
 
 
@@ -1591,6 +1637,29 @@ if (currentStep === 'templates') {
   <Card className="flex flex-col flex-1">
     <CardHeader>
       <CardTitle>Live Preview</CardTitle>
+      <div className="flex gap-2 mt-2">
+  <Button
+    size="sm"
+    variant={editMode ? "default" : "outline"}
+    onClick={() => setEditMode(!editMode)}
+  >
+    {editMode ? "Close Editing" : "Edit Resume"}
+  </Button>
+
+  {editMode && (
+    <Button
+      size="sm"
+      variant="default"
+      onClick={() => {
+        setResumeData(editableResume);
+        setEditMode(false);
+      }}
+    >
+      Save Changes
+    </Button>
+  )}
+</div>
+
       <CardDescription>
         {user?.plan === 'free'
           ? 'Preview with watermark (upgrade to remove)'
@@ -1676,27 +1745,146 @@ if (currentStep === 'templates') {
   </div>
 )}
 
+{/* Summary */}
+{resumeData.summary && resumeData.summary.trim() !== "" && (
+  <div className="mb-6">
+    <h3 className="text-primary mb-3 border-b pb-2">Summary</h3>
+    {editMode ? (
+      <Editable
+        multiline
+        value={editableResume.summary}
+        onChange={(v) => setEditableResume({ ...editableResume, summary: v })}
+      />
+    ) : (
+      <p className="text-muted-foreground">{resumeData.summary}</p>
+    )}
+  </div>
+)}
 
           {/* Experience */}
-          {(resumeData.experience?.length ?? 0) > 0 && resumeData.experience?.[0]?.title && (
-            <div className="mb-6">
-              <h3 className="text-primary mb-3 border-b pb-2">Professional Experience</h3>
-              <div className="space-y-4">
-                {resumeData.experience.map((exp, i) => (
-                  exp.title && (
-                    <div key={i}>
-                      <div className="flex justify-between items-start mb-1">
-                        <h4>{exp.title}</h4>
-                        <span className="text-muted-foreground">{exp.duration}</span>
-                      </div>
-                      <p className="text-muted-foreground mb-2">{exp.company}</p>
-                      <p className="text-muted-foreground">{exp.description}</p>
-                    </div>
-                  )
-                ))}
-              </div>
+          {(editableResume.experience ?? []).length > 0 && (
+  <div className="mb-6">
+    <h3 className="text-primary mb-3 border-b pb-2">Professional Experience</h3>
+
+    {(editableResume.experience ?? []).map((exp: Experience, index: number) => (
+      <div key={index} className="mb-4">
+
+        {/* Editable Title */}
+        {editMode ? (
+          <Editable
+            value={exp.title}
+            onChange={(v) => {
+              const updated = [...editableResume.experience];
+              updated[index].title = v;
+              setEditableResume({ ...editableResume, experience: updated });
+            }}
+          />
+        ) : (
+          <h4>{exp.title}</h4>
+        )}
+
+        {/* Editable Company */}
+        {editMode ? (
+          <Editable
+            value={exp.company}
+            onChange={(v) => {
+              const updated = [...editableResume.experience];
+              updated[index].company = v;
+              setEditableResume({ ...editableResume, experience: updated });
+            }}
+          />
+        ) : (
+          <p className="text-muted-foreground">{exp.company}</p>
+        )}
+
+        {/* Editable Duration */}
+        {editMode ? (
+          <Editable
+            value={exp.duration}
+            onChange={(v) => {
+              const updated = [...editableResume.experience];
+              updated[index].duration = v;
+              setEditableResume({ ...editableResume, experience: updated });
+            }}
+          />
+        ) : (
+          <span className="text-muted-foreground">{exp.duration}</span>
+        )}
+
+        {/* Bullet Points */}
+        <div className="mt-2">
+          {(exp.description ?? []).map((line: string, i: number) => (
+            <div key={i} className="flex gap-2 items-start">
+              {editMode ? (
+                <>
+                  <Editable
+                    multiline
+                    value={line}
+                    onChange={(v) => {
+                      const updated = [...editableResume.experience];
+                      updated[index].description[i] = v;
+                      setEditableResume({ ...editableResume, experience: updated });
+                    }}
+                  />
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => {
+                      const updated = [...editableResume.experience];
+                      updated[index].description.splice(i, 1);
+                      setEditableResume({ ...editableResume, experience: updated });
+                    }}
+                  >
+                    ✕
+                  </Button>
+                </>
+              ) : (
+                <p className="text-muted-foreground">• {line}</p>
+              )}
             </div>
-          )}
+          ))}
+        </div>
+
+        {/* Add bullet */}
+        {editMode && (
+          <Button
+            size="sm"
+            className="mt-1"
+            onClick={() => {
+              const updated = [...editableResume.experience];
+              updated[index].description.push("New bullet...");
+              setEditableResume({ ...editableResume, experience: updated });
+            }}
+          >
+            + Add bullet
+          </Button>
+        )}
+      </div>
+    ))}
+
+    {/* Add new experience */}
+    {editMode && (
+      <Button
+        className="mt-4"
+        onClick={() => {
+          const updated = [
+            ...editableResume.experience,
+            {
+              title: "New Job",
+              company: "Company",
+              duration: "",
+              description: ["New responsibility..."],
+            },
+          ];
+          setEditableResume({ ...editableResume, experience: updated });
+        }}
+      >
+        + Add Experience
+      </Button>
+    )}
+  </div>
+)}
+
 
           {/* Education */}
           {resumeData.education && resumeData.education.length > 0 && resumeData.education[0]?.degree && (
