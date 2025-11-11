@@ -336,28 +336,25 @@ interface AIResume {
   certifications: any[];
 }
  
-function flattenDescription(desc: any): string[] {
+function flatten(desc: any): string[] {
   if (!desc) return ["No description provided"];
 
-  // If it's already a string
   if (typeof desc === "string") return [desc];
 
-  // If it's array → flatten all strings inside
   if (Array.isArray(desc)) {
-    return desc.flatMap(item => {
-      if (typeof item === "string") return [item];
-      if (item && Array.isArray(item.items)) return item.items;
-      return [];
+    const out: string[] = [];
+    desc.forEach(item => {
+      if (typeof item === "string") out.push(item);
+      else if (item && Array.isArray(item.items)) out.push(...item.items);
     });
+    return out.length ? out : ["No description provided"];
   }
 
-  // If it's object with items[]
-  if (desc.items && Array.isArray(desc.items)) {
-    return desc.items;
-  }
+  if (desc.items && Array.isArray(desc.items)) return desc.items;
 
   return ["No description provided"];
 }
+
 
 async function buildPreviewFromAI(aiResume: AIResume) {
   if (!selectedTemplate?.url) {
@@ -393,22 +390,24 @@ async function buildPreviewFromAI(aiResume: AIResume) {
         // languages:
         .replace(/{{languages}}/g, (aiResume.languages || resumeData.languages || []).map(l => `<div class="skill-item">${l}</div>`).join(""))
         .replace(/{{experience}}/g,
-  (resumeData.experience || []).map(e => {
-    const descList = flattenDescription(e.description);
+  (resumeData.experience || [])
+    .map(e => {
+      const lines = flatten(e.description); // convert into array of pure strings
 
-    return `
-      <div class="experience-item">
-        <div class="job-title-text">
-          <strong>${e.title || ""}</strong>
-          <span class="job-date">${e.duration || ""}</span>
+      return `
+        <div class="experience-item">
+          <div class="job-title-text">
+            <strong>${e.title || ""}</strong>
+            <span class="job-date">${e.duration || ""}</span>
+          </div>
+          <div class="company-name">${e.company || ""}</div>
+          <div class="job-description">
+            ${lines.map(d => `<div>${d}</div>`).join("")}
+          </div>
         </div>
-        <div class="company-name">${e.company || ""}</div>
-        <div class="job-description">
-          ${descList.map(d => `<div>${d}</div>`).join("")}
-        </div>
-      </div>
-    `;
-  }).join("<br>")
+      `;
+    })
+    .join("<br>")
 )
 
 
@@ -430,19 +429,21 @@ async function buildPreviewFromAI(aiResume: AIResume) {
             </div>`
           ).join("")
         )
-        .replace(/{{projects}}/g,
-  (resumeData.projects || []).map(p => {
-    const descList = flattenDescription(p.description);
+       .replace(/{{projects}}/g,
+  (resumeData.projects || [])
+    .map(p => {
+      const lines = flatten(p.description);
 
-    return `
-      <div class="project-item">
-        <strong>${p.title || ""}</strong>
-        <div>
-          ${descList.map(d => `<div>${d}</div>`).join("")}
+      return `
+        <div class="project-item">
+          <strong>${p.title || ""}</strong>
+          <div>
+            ${lines.map(d => `<div>${d}</div>`).join("")}
+          </div>
         </div>
-      </div>
-    `;
-  }).join("")
+      `;
+    })
+    .join("")
 )
 
 
@@ -575,23 +576,26 @@ const handlePreview = async () => {
       .replace(/{{technologies}}/g, (resumeData.technologies || []).map(t => `<div class="skill-item">${t}</div>`).join(""))
       .replace(/{{languages}}/g, (resumeData.languages || []).map(l => `<div class="skill-item">${l}</div>`).join(""))
       .replace(/{{experience}}/g,
-  (resumeData.experience || []).map(e => {
-    const descList = flattenDescription(e.description);
+  (resumeData.experience || [])
+    .map(e => {
+      const lines = flatten(e.description); // convert into array of pure strings
 
-    return `
-      <div class="experience-item">
-        <div class="job-title-text">
-          <strong>${e.title || ""}</strong>
-          <span class="job-date">${e.duration || ""}</span>
+      return `
+        <div class="experience-item">
+          <div class="job-title-text">
+            <strong>${e.title || ""}</strong>
+            <span class="job-date">${e.duration || ""}</span>
+          </div>
+          <div class="company-name">${e.company || ""}</div>
+          <div class="job-description">
+            ${lines.map(d => `<div>${d}</div>`).join("")}
+          </div>
         </div>
-        <div class="company-name">${e.company || ""}</div>
-        <div class="job-description">
-          ${descList.map(d => `<div>${d}</div>`).join("")}
-        </div>
-      </div>
-    `;
-  }).join("<br>")
+      `;
+    })
+    .join("<br>")
 )
+
 
 
       .replace(/{{education}}/g,
@@ -613,20 +617,21 @@ const handlePreview = async () => {
         ).join("")
       )
        .replace(/{{projects}}/g,
-  (resumeData.projects || []).map(p => {
-    const descList = flattenDescription(p.description);
+  (resumeData.projects || [])
+    .map(p => {
+      const lines = flatten(p.description);
 
-    return `
-      <div class="project-item">
-        <strong>${p.title || ""}</strong>
-        <div>
-          ${descList.map(d => `<div>${d}</div>`).join("")}
+      return `
+        <div class="project-item">
+          <strong>${p.title || ""}</strong>
+          <div>
+            ${lines.map(d => `<div>${d}</div>`).join("")}
+          </div>
         </div>
-      </div>
-    `;
-  }).join("")
+      `;
+    })
+    .join("")
 )
-
 
 
       .replace(/{{certifications}}/g, (resumeData.certifications || []).map(c => `<div>${c.name || ""}${c.year ? ` (${c.year})` : ""}</div>`).join(""));
