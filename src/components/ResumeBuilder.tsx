@@ -45,6 +45,7 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ onBack }) => {
   const [aiResume, setAiResume] = useState<string | null>(null);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [aiRawText, setAiRawText] = useState<string>("");
+  
 
 
   if (isLoading) {
@@ -89,6 +90,9 @@ export const ResumeBuilder: React.FC<ResumeBuilderProps> = ({ onBack }) => {
     }]
 
   });
+
+  const [editMode, setEditMode] = useState(false);
+  const [editableResume, setEditableResume] = useState<Partial<Resume>>(resumeData);
 
   const [newSkill, setNewSkill] = useState('');
 
@@ -212,7 +216,7 @@ async function generateAIContent() {
     // After you have `const resumeDataFromAI = data.resume;`
 setAiResume(resumeDataFromAI);          // keep AI result
 setAiRawText?.(JSON.stringify(data, null, 2)); // optional debug
-
+setEditableResume(resumeDataFromAI);
 setResumeData(prev => {
   // helper to merge unique strings
   const mergeUnique = (a: any[] = [], b: any[] = []) =>
@@ -672,6 +676,26 @@ const removeTechnology = (tech: string) => {
     ...prev,
     technologies: (prev.technologies || []).filter((t) => t !== tech),
   }));
+};
+
+const Editable: React.FC<{
+  value: string;
+  onChange: (v: string) => void;
+  multiline?: boolean;
+}> = ({ value, onChange, multiline = false }) => {
+  return multiline ? (
+    <Textarea
+      className="border p-1 w-full text-sm"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  ) : (
+    <Input
+      className="border p-1 w-full text-sm"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  );
 };
 
 // Template Selection Screen
@@ -1656,20 +1680,39 @@ if (currentStep === 'templates') {
         {/* Resume Content */}
         <div className="relative z-20">
           {/* Header */}
-          <div className="text-center mb-6 border-b pb-4">
-            <h2 className="text-primary mb-2">
-              {resumeData.personal_info?.name || 'Your Name'}
-            </h2>
-            <div className="text-muted-foreground space-y-1">
-              {resumeData.personal_info?.email && <p>{resumeData.personal_info.email}</p>}
-              {resumeData.personal_info?.phone && <p>{resumeData.personal_info.phone}</p>}
-              {resumeData.personal_info?.location && <p>{resumeData.personal_info.location}</p>}
-            </div>
-          </div>
-          {resumeData.personal_info?.photo && (
+{/* Header */}
+<div className="text-center mb-6 border-b pb-4">
+  {editMode ? (
+    <Editable
+      value={editableResume.personal_info?.name || ''}
+      onChange={(v) =>
+        setEditableResume({
+          ...editableResume,
+          personal_info: { ...editableResume.personal_info, name: v },
+        })
+      }
+    />
+  ) : (
+    <h2 className="text-primary mb-2">
+      {editableResume.personal_info?.name || 'Your Name'}
+    </h2>
+  )}
+
+  {editMode ? (
+    <Editable
+      multiline
+      value={editableResume.summary || ''}
+      onChange={(v) => setEditableResume({ ...editableResume, summary: v })}
+    />
+  ) : (
+    <p className="text-muted-foreground">{editableResume.summary}</p>
+  )}
+</div>
+
+          {editableResume.personal_info?.photo && (
   <div className="flex justify-center mb-4">
     <img
-      src={resumeData.personal_info.photo}
+      src={editableResume.personal_info.photo}
       alt="Profile"
       className="w-28 h-28 object-cover rounded-full border"
     />
