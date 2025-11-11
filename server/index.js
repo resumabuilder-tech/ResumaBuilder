@@ -143,6 +143,40 @@ app.post("/api/verify-otp", async (req, res) => {
 });
 
 
+function flattenDesc(desc) {
+  if (!desc) return ["No description provided"];
+
+  // if description is already array of strings
+  if (Array.isArray(desc) && desc.every(x => typeof x === "string")) {
+    return desc;
+  }
+
+  // if description contains nested objects like { type, items }
+  if (Array.isArray(desc)) {
+    const out = [];
+    desc.forEach(item => {
+      if (!item) return;
+
+      if (typeof item === "string") {
+        out.push(item);
+      } else if (item.items && Array.isArray(item.items)) {
+        out.push(...item.items);
+      }
+    });
+
+    return out.length ? out : ["No description provided"];
+  }
+
+  // single string
+  if (typeof desc === "string") return [desc];
+
+  // single nested object
+  if (desc.items && Array.isArray(desc.items)) {
+    return desc.items;
+  }
+
+  return ["No description provided"];
+}
 
 
 app.post("/api/generate/resume", async (req, res) => {
@@ -273,6 +307,40 @@ function safeDesc(v) {
   if (typeof v === "string") return [v];
   return [];
 }
+function flattenDesc(desc) {
+  if (!desc) return ["No description provided"];
+
+  // if description is already array of strings
+  if (Array.isArray(desc) && desc.every(x => typeof x === "string")) {
+    return desc;
+  }
+
+  // if description contains nested objects like { type, items }
+  if (Array.isArray(desc)) {
+    const out = [];
+    desc.forEach(item => {
+      if (!item) return;
+
+      if (typeof item === "string") {
+        out.push(item);
+      } else if (item.items && Array.isArray(item.items)) {
+        out.push(...item.items);
+      }
+    });
+
+    return out.length ? out : ["No description provided"];
+  }
+
+  // single string
+  if (typeof desc === "string") return [desc];
+
+  // single nested object
+  if (desc.items && Array.isArray(desc.items)) {
+    return desc.items;
+  }
+
+  return ["No description provided"];
+}
 
 const normalized = {
   summary: safeString(parsed.summary),
@@ -285,21 +353,13 @@ const normalized = {
   experience: Array.isArray(parsed.experience)
   ? parsed.experience.map(e => ({
       ...e,
-      description: Array.isArray(e.description) 
-        ? e.description.length > 0 
-          ? e.description 
-          : ["No description provided"] // fallback if empty
-        : [e.description].filter(Boolean)
+      description: flattenDesc(e.description)
     }))
   : [],
 projects: Array.isArray(parsed.projects)
   ? parsed.projects.map(p => ({
       ...p,
-      description: Array.isArray(p.description) 
-        ? p.description.length > 0 
-          ? p.description 
-          : ["No description provided"] // fallback
-        : [p.description].filter(Boolean)
+      description: flattenDesc(p.description)
     }))
   : [],
 

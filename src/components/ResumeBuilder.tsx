@@ -354,6 +354,11 @@ function flatten(desc: any): string[] {
 
   return ["No description provided"];
 }
+const toArray = (v: any): string[] => {
+  if (!v) return [];
+  if (Array.isArray(v)) return v.filter(x => typeof x === "string");
+  return [String(v)];
+};
 
 
 async function buildPreviewFromAI(aiResume: AIResume) {
@@ -389,24 +394,20 @@ async function buildPreviewFromAI(aiResume: AIResume) {
 
         // languages:
         .replace(/{{languages}}/g, (aiResume.languages || resumeData.languages || []).map(l => `<div class="skill-item">${l}</div>`).join(""))
-        .replace(/{{experience}}/g,
+       .replace(/{{experience}}/g,
   (resumeData.experience || [])
-    .map(e => {
-      const lines = flatten(e.description); // convert into array of pure strings
-
-      return `
-        <div class="experience-item">
-          <div class="job-title-text">
-            <strong>${e.title || ""}</strong>
-            <span class="job-date">${e.duration || ""}</span>
-          </div>
-          <div class="company-name">${e.company || ""}</div>
-          <div class="job-description">
-            ${lines.map(d => `<div>${d}</div>`).join("")}
-          </div>
+    .map(e => `
+      <div class="experience-item">
+        <div class="job-title-text">
+          <strong>${e.title || ""}</strong>
+          <span class="job-date">${e.duration || ""}</span>
         </div>
-      `;
-    })
+        <div class="company-name">${e.company || ""}</div>
+        <div class="job-description">
+          ${toArray(e.description).map((d, i) => `<div>${d}</div>`).join("")}
+        </div>
+      </div>
+    `)
     .join("<br>")
 )
 
@@ -429,20 +430,16 @@ async function buildPreviewFromAI(aiResume: AIResume) {
             </div>`
           ).join("")
         )
-       .replace(/{{projects}}/g,
+      .replace(/{{projects}}/g,
   (resumeData.projects || [])
-    .map(p => {
-      const lines = flatten(p.description);
-
-      return `
-        <div class="project-item">
-          <strong>${p.title || ""}</strong>
-          <div>
-            ${lines.map(d => `<div>${d}</div>`).join("")}
-          </div>
+    .map(p => `
+      <div class="project-item">
+        <strong>${p.title || ""}</strong>
+        <div>
+          ${toArray(p.description).map((d, i) => `<div>${d}</div>`).join("")}
         </div>
-      `;
-    })
+      </div>
+    `)
     .join("")
 )
 
@@ -577,22 +574,18 @@ const handlePreview = async () => {
       .replace(/{{languages}}/g, (resumeData.languages || []).map(l => `<div class="skill-item">${l}</div>`).join(""))
       .replace(/{{experience}}/g,
   (resumeData.experience || [])
-    .map(e => {
-      const lines = flatten(e.description); // convert into array of pure strings
-
-      return `
-        <div class="experience-item">
-          <div class="job-title-text">
-            <strong>${e.title || ""}</strong>
-            <span class="job-date">${e.duration || ""}</span>
-          </div>
-          <div class="company-name">${e.company || ""}</div>
-          <div class="job-description">
-            ${lines.map(d => `<div>${d}</div>`).join("")}
-          </div>
+    .map(e => `
+      <div class="experience-item">
+        <div class="job-title-text">
+          <strong>${e.title || ""}</strong>
+          <span class="job-date">${e.duration || ""}</span>
         </div>
-      `;
-    })
+        <div class="company-name">${e.company || ""}</div>
+        <div class="job-description">
+          ${toArray(e.description).map((d, i) => `<div>${d}</div>`).join("")}
+        </div>
+      </div>
+    `)
     .join("<br>")
 )
 
@@ -616,23 +609,18 @@ const handlePreview = async () => {
           </div>`
         ).join("")
       )
-       .replace(/{{projects}}/g,
+      .replace(/{{projects}}/g,
   (resumeData.projects || [])
-    .map(p => {
-      const lines = flatten(p.description);
-
-      return `
-        <div class="project-item">
-          <strong>${p.title || ""}</strong>
-          <div>
-            ${lines.map(d => `<div>${d}</div>`).join("")}
-          </div>
+    .map(p => `
+      <div class="project-item">
+        <strong>${p.title || ""}</strong>
+        <div>
+          ${toArray(p.description).map((d, i) => `<div>${d}</div>`).join("")}
         </div>
-      `;
-    })
+      </div>
+    `)
     .join("")
 )
-
 
       .replace(/{{certifications}}/g, (resumeData.certifications || []).map(c => `<div>${c.name || ""}${c.year ? ` (${c.year})` : ""}</div>`).join(""));
 
