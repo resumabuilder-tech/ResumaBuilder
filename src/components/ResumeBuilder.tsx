@@ -1713,7 +1713,7 @@ if (currentStep === 'templates') {
           <>
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 opacity-10">
               <div className="transform -rotate-45 text-center">
-                <p className="text-6xl text-gray-900">RESUMIZE</p>
+                <p className="text-6xl text-gray-900">RESUMA BUILDER</p>
                 <p className="text-2xl text-gray-900">FREE VERSION</p>
               </div>
             </div>

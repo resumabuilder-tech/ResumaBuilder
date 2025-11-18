@@ -27,7 +27,7 @@ app.use(express.json());
 
 // ✅ Quick route to test backend
 app.get("/", (req, res) => {
-  res.send("✅ Resumize Backend is running");
+  res.send("✅ Resuma Builder Backend is running");
 });
 
 app.use((req, res, next) => {
