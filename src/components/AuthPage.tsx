@@ -83,6 +83,7 @@ const handleVerifyOtp = async (e: React.FormEvent) => {
 }),
     });
     console.log("verify-otp response status:", response.status);
+    console.log("redeploy fix");
     const data = await response.json();
     console.log("verify-otp response data:", data);
     if (response.ok && data.success) {
