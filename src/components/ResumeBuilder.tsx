@@ -11,7 +11,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { useAuth } from '../contexts/AuthContext';
 import { ArrowLeft, Plus, Trash2, Download, Wand2, Save, Eye, Crown, Lock, Sparkles } from 'lucide-react';
 import { Resume, ResumeTemplate } from '../types';
-import logo from 'figma:asset/2cc5c58a6356b9bc99595ba4c64a3c807447e92a.png';
+import logo from '../assets/Generated Image November 18, 2025 - 5_26PM.png';
 import { fetchTemplates } from '../lib/resumeService';
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";

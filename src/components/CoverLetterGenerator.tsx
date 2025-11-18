@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge';
 import { useAuth } from '../contexts/AuthContext';
 import { ArrowLeft, Wand2, Download, Save, Crown, Lock } from 'lucide-react';
-import logo from 'figma:asset/Generated Image November 18, 2025 - 5_26PM.png';
+import logo from '../assets/Generated Image November 18, 2025 - 5_26PM.png';
 
 interface CoverLetterGeneratorProps {
   onBack: () => void;

@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { useAuth } from '../contexts/AuthContext';
 import { CheckCircle2, Zap, Sparkles } from 'lucide-react';
-import logo from 'figma:asset/Generated Image November 18, 2025 - 5_26PM.png';
+import logo from '../assets/Generated Image November 18, 2025 - 5_26PM.png';
+
 
 export const AuthPage: React.FC = () => {
   const { login, signup, isLoading } = useAuth();

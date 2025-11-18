@@ -12,7 +12,8 @@ import {
   Crown,
   Sparkles,
 } from 'lucide-react';
-import logo from 'figma:asset/Generated Image November 18, 2025 - 5_26PM.png';
+import logo from '../assets/Generated Image November 18, 2025 - 5_26PM.png';
+
 
 export type Section = 'resume' | 'cover-letter' | 'ats-checker' | 'upgrade' | 'admin';
 

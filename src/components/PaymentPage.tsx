@@ -7,7 +7,8 @@ import { Badge } from './ui/badge';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase'; // adjust path if needed
 import { ArrowLeft, Crown, CheckCircle, Upload, Copy, Building, Sparkles, CreditCard } from 'lucide-react';
-import logo from 'figma:asset/Generated Image November 18, 2025 - 5_26PM.png';
+import logo from '../assets/Generated Image November 18, 2025 - 5_26PM.png';
+
 
 interface PaymentPageProps {
   onBack: () => void;
