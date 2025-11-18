@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { useAuth } from '../contexts/AuthContext';
 import { CheckCircle2, Zap, Sparkles } from 'lucide-react';
-import logo from 'figma:asset/2cc5c58a6356b9bc99595ba4c64a3c807447e92a.png';
+import logo from 'figma:asset/Generated Image November 18, 2025 - 5_26PM.png';
 
 export const AuthPage: React.FC = () => {
   const { login, signup, isLoading } = useAuth();
@@ -128,9 +128,9 @@ const handleVerifyOtp = async (e: React.FormEvent) => {
       {/* Header */}
       <header className="p-4 md:p-6">
         <div className="flex items-center gap-3">
-          <img src={logo} alt="Resumize" className="h-10 w-10" />
+          <img src={logo} alt="Resuma Builder" className="h-10 w-10" />
           <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-green-600 bg-clip-text text-transparent">
-            Resumize
+            Resuma Builder
           </h1>
         </div>
       </header>

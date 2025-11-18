@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge';
 import { useAuth } from '../contexts/AuthContext';
 import { ArrowLeft, Wand2, Download, Save, Crown, Lock } from 'lucide-react';
-import logo from 'figma:asset/2cc5c58a6356b9bc99595ba4c64a3c807447e92a.png';
+import logo from 'figma:asset/Generated Image November 18, 2025 - 5_26PM.png';
 
 interface CoverLetterGeneratorProps {
   onBack: () => void;
@@ -117,7 +117,7 @@ export const CoverLetterGenerator: React.FC<CoverLetterGeneratorProps> = ({ onBa
               <span className="hidden sm:inline">Back</span>
             </Button>
             <div className="flex items-center gap-2">
-              <img src={logo} alt="Resumize" className="h-6 w-6" />
+              <img src={logo} alt="Resuma Builder" className="h-6 w-6" />
               <h1 className="text-lg font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-green-600 bg-clip-text text-transparent">Cover Letter Generator</h1>
             </div>
           </div>

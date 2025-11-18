@@ -7,7 +7,7 @@ import { Badge } from './ui/badge';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase'; // adjust path if needed
 import { ArrowLeft, Crown, CheckCircle, Upload, Copy, Building, Sparkles, CreditCard } from 'lucide-react';
-import logo from 'figma:asset/2cc5c58a6356b9bc99595ba4c64a3c807447e92a.png';
+import logo from 'figma:asset/Generated Image November 18, 2025 - 5_26PM.png';
 
 interface PaymentPageProps {
   onBack: () => void;
@@ -21,9 +21,9 @@ export const PaymentPage: React.FC<PaymentPageProps> = ({ onBack }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const bankDetails = {
-    bankName: 'HBL Bank',
-    accountTitle: 'Resumize Pakistan',
-    accountNumber: '12345678901234',
+    bankName: 'Fa Bank',
+    accountTitle: 'M Ahmad Riaz',
+    accountNumber: '3585525000003866',
     iban: 'PK36HABB0012345678901234'
   };
 
@@ -149,7 +149,7 @@ const email = user.email || "Unknown";
               <span className="sm:hidden">Back</span>
             </Button>
             <div className="flex items-center gap-2">
-              <img src={logo} alt="Resumize" className="h-6 w-6" />
+              <img src={logo} alt="Resuma Builder" className="h-6 w-6" />
               <h1 className="text-lg font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-green-600 bg-clip-text text-transparent">Upgrade to Premium</h1>
             </div>
           </div>
@@ -326,8 +326,7 @@ const email = user.email || "Unknown";
                 <p>If you face any issues with payment, contact our support:</p>
                 <div className="space-y-2">
                   <div><strong>WhatsApp:</strong> +92-300-1234567</div>
-                  <div><strong>Email:</strong> support@resumize.com</div>
-                  <div><strong>Hours:</strong> 9 AM - 6 PM (Mon-Fri)</div>
+                  <div><strong>Email:</strong> support@resumabuilder.com</div>
                 </div>
               </CardContent>
             </Card>

@@ -12,7 +12,7 @@ import {
   Crown,
   Sparkles,
 } from 'lucide-react';
-import logo from 'figma:asset/2cc5c58a6356b9bc99595ba4c64a3c807447e92a.png';
+import logo from 'figma:asset/Generated Image November 18, 2025 - 5_26PM.png';
 
 export type Section = 'resume' | 'cover-letter' | 'ats-checker' | 'upgrade' | 'admin';
 
@@ -44,8 +44,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       <header className="bg-card/80 backdrop-blur-lg border-b border-border p-4 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={logo} alt="Resumize" className="h-8 w-8" />
-            <h1 className="text-xl font-bold text-foreground">Resumize</h1>
+            <img src={logo} alt="Resuma Builder" className="h-8 w-8" />
+            <h1 className="text-xl font-bold text-foreground">Resuma Builder</h1>
           </div>
 
           <div className="flex items-center gap-4">
